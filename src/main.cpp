@@ -5,13 +5,18 @@
  *      Author: lars
  */
 
-#include "video.h"
-#include "types.h"
+#include "videoReader.h"
 #include "writePPM.h"
+#include "colorFilter.h"
+#include "types.h"
+
+extern "C"{
+	#include <libavformat/avformat.h>
+}
 
 #include <iostream>
 #include <cstdlib>
-#include <stdio.h>
+#include <stdexcept>
 
 using namespace GRAVID;
 
@@ -22,18 +27,32 @@ int main(int argc, char** argv){
 	/*
 	 * start useful stuff here
 	 */
-
-	rgb* nextFrame;
+	ColorFilter cFilt;
 
 	try{
-		// create a video object, retrieve all frames and write them as PPM in a subdirectory "pictures"
-		Video myVideo = Video("/home/lars/Videos/video.mpg");
-		char filename[50];
-		for(unsigned short i=0; myVideo.hasNextFrame(); i++){
-			sprintf(filename,"pictures/test%i.ppm",i);
-			nextFrame = myVideo.getNextFrame();
-			writePPM(nextFrame, filename, myVideo.getWidth(), myVideo.getHeight());
-		}
+		// width and height of the images
+		unsigned short width, height;
+		// source image pointer
+		RGB* srcImage;
+
+		// read a video
+		VideoReader myVideo("videos/video1.mpg");
+		srcImage = myVideo.getNextFrame();
+
+		width = myVideo.getWidth();
+		height = myVideo.getHeight();
+
+		// the result picture
+		RGB greyImage[width * height];
+		RGB sepiaImage[width * height];
+
+		// apply the filters
+		cFilt.applyFilter(srcImage,width,height, greyImage, GRAY_FILTER);
+		cFilt.applyFilter(srcImage,width,height, sepiaImage, SEPIA_FILTER);
+
+		// write the filtered images in PPM files
+		writePPM(greyImage, "pictures/gray.ppm", width, height);
+		writePPM(sepiaImage, "pictures/sepia.ppm", width, height);
 	}
 	catch(std::logic_error e){
 
