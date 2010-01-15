@@ -8,10 +8,12 @@
 #include "video.h"
 #include "types.h"
 #include "writePPM.h"
+#include "sobel-cpu.h"
 
 #include <iostream>
 #include <cstdlib>
 #include <stdio.h>
+
 
 using namespace GRAVID;
 
@@ -27,12 +29,14 @@ int main(int argc, char** argv){
 
 	try{
 		// create a video object, retrieve all frames and write them as PPM in a subdirectory "pictures"
-		Video myVideo = Video("/home/lars/Videos/video.mpg");
+		Video myVideo = Video("/home/mk3/testvid.mpg");
 		char filename[50];
 		for(unsigned short i=0; myVideo.hasNextFrame(); i++){
-			sprintf(filename,"pictures/test%i.ppm",i);
+			sprintf(filename,"/home/mk3/gravid/test%i.ppm",i);
 			nextFrame = myVideo.getNextFrame();
-			writePPM(nextFrame, filename, myVideo.getWidth(), myVideo.getHeight());
+                        rgb* outputPic = nextFrame;
+                        //sobel_cpu(nextFrame, outputPic, myVideo.getWidth(), myVideo.getHeight() );
+			writePPM(outputPic, filename, myVideo.getWidth(), myVideo.getHeight());
 		}
 	}
 	catch(std::logic_error e){
