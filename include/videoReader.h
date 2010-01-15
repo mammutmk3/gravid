@@ -1,5 +1,5 @@
 /*
- * video.h
+ * videoReader.h
  *
  *  Created on: Jan 7, 2010
  *      Author: lars
@@ -15,9 +15,9 @@ extern "C" {
 
 namespace GRAVID{
 	/**
-	 * This class represents a video that is being loaded from hard disk
+	 * This class represents a video that is being loaded from hard disk and provides methods to read the single frames and other characteristic data
 	 */
-	class Video{
+	class VideoReader{
 	private:
 		// the filename to the corresponding video file
 		char* filename;
@@ -36,7 +36,7 @@ namespace GRAVID{
 		unsigned short width, height;
 		// the position of the next frame that will be decoded
 		unsigned int nextPos;
-		// denotes, if there is a next frame in the streamm, or not
+		// denotes, if there is a next frame in the stream, or not
 		bool endOfFile;
 
 	public:
@@ -45,16 +45,16 @@ namespace GRAVID{
 		 *
 		 * @param filename the path relative to the current execution directory or an absolute path to the video file of interest
 		 */
-		Video(const char* filename) throw(FileNotFound, std::logic_error);
+		VideoReader(const char* filename) throw(FileNotFound, std::logic_error);
 
-		~Video();
+		~VideoReader();
 
 		/**
 		 * Returns the next frame in the video stream
 		 *
 		 * @return field of rgb values of size getWidht()*getHeight(); the field ist stored in consecutive rows. NULL if the end of the stream has been reached
 		 * */
-		rgb* getNextFrame() throw(std::logic_error);
+		RGB* getNextFrame() throw(std::logic_error);
 
 		/**
 		 * Get the videos width
@@ -72,5 +72,10 @@ namespace GRAVID{
 		 * @return true if there is a next frame to decode, false if the end of the stream has been reached
 		 */
 		bool hasNextFrame(){return !this->endOfFile;}
+
+		/**
+		 * returns some basic information like bit-rate and frame-rate needed for video output in VideoWriter class
+		 */
+		VideoInfo getVideoInfo();
 	};
 }

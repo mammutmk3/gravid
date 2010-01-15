@@ -5,7 +5,7 @@
  *      Author: lars
  */
 
-#include "video.h"
+#include "videoReader.h"
 #include "exceptions.h"
 
 #include <string>
@@ -17,7 +17,9 @@ extern "C"{
 
 using namespace GRAVID;
 
-Video::Video(const char* filename) throw (FileNotFound, std::logic_error){
+// TODO adapt this to RGBA
+
+VideoReader::VideoReader(const char* filename) throw (FileNotFound, std::logic_error){
 
 	// initialize the members
 	this->pFormatCtx = NULL;
@@ -90,7 +92,7 @@ Video::Video(const char* filename) throw (FileNotFound, std::logic_error){
 	avpicture_fill((AVPicture *)this->pRGBFrame, this->buffer, PIX_FMT_RGB24, this->pCodecCtx->width, this->pCodecCtx->height);
 }
 
-Video::~Video(){
+VideoReader::~VideoReader(){
 	// free the raw data buffer
 	if(NULL != this->buffer)
 		av_free(this->buffer);
@@ -110,7 +112,7 @@ Video::~Video(){
 		av_close_input_file(this->pFormatCtx);
 }
 
-rgb* Video::getNextFrame()  throw(std::logic_error){
+RGB* VideoReader::getNextFrame()  throw(std::logic_error){
 
 	// return NULL if the end of the video has been reached
 	if(!this->hasNextFrame())
@@ -149,6 +151,8 @@ rgb* Video::getNextFrame()  throw(std::logic_error){
 	}
 
 	// convert the frame from YUV to RGB
+	// TODO find a way to suppress the warnings for non-accelerated color conversion,
+	// 		as the outputting slows down the application
 	sws_scale(pSwsCtx,
 				this->pFrame->data,
 				this->pFrame->linesize,
@@ -159,5 +163,36 @@ rgb* Video::getNextFrame()  throw(std::logic_error){
 	// free the requested packet
 	av_free_packet(&packet);
 	// return the frame as an RGB representation
-	return (rgb* )this->pRGBFrame->data[0];
+	return (RGB* )this->pRGBFrame->data[0];
+}
+
+VideoInfo VideoReader::getVideoInfo(){
+	VideoInfo tmp;
+
+	// the video stream of the file
+	AVStream* v_st = this->pFormatCtx->streams[this->videoStreamIndex];
+
+	tmp.width = this->width;
+	tmp.height = this->height;
+	tmp.pixelFMT = PIX_FMT_RGB24;
+	// total frame number
+	tmp.nb_frames = v_st->duration;
+	// calculate the frame rate
+	tmp.frame_rate = v_st->r_frame_rate;
+	float frame_rate = v_st->r_frame_rate.num/(float)v_st->r_frame_rate.den;
+	// duration in seconds
+	tmp.duration = tmp.nb_frames / frame_rate;
+
+	// retrieve the first audio stream, if any
+	tmp.pAudioStream = NULL;
+	for(unsigned int i = 0; i < this->pFormatCtx->nb_streams;i++){
+		if(this->pFormatCtx->streams[i]->codec->codec_type==CODEC_TYPE_AUDIO) {
+			tmp.pAudioStream=this->pFormatCtx->streams[i];
+			break;
+		}
+	}
+	// set the bit-rate
+	tmp.bit_rate = this->pFormatCtx->bit_rate;
+
+	return tmp;
 }
