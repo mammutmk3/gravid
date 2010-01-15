@@ -4,7 +4,7 @@
  *  Created on: Jan 13, 2010
  *      Author: lars
  */
-
+/*
 #include "openCLProgram.h"
 
 #include <CL/cl.h>
@@ -150,3 +150,4 @@ void OpenCLProgram::setKernelArgument(const unsigned char index, const size_t si
 	if(CL_SUCCESS != this->errorCode)
 		this->errorHappened("undefined error happened while setting the kernel's argument");
 }
+*/

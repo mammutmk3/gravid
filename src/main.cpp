@@ -8,6 +8,7 @@
 #include "videoReader.h"
 #include "writePPM.h"
 #include "colorFilter.h"
+#include "edgeDetection.h"
 #include "types.h"
 
 extern "C"{
@@ -29,6 +30,7 @@ int main(int argc, char** argv){
 	 * start useful stuff here
 	 */
 	ColorFilter cFilt;
+        EdgeDetection edgeDet;
 
 	try{
 		// width and height of the images
@@ -46,14 +48,17 @@ int main(int argc, char** argv){
 		// the result picture
 		RGB greyImage[width * height];
 		RGB sepiaImage[width * height];
+                RGB sobelImage[width * height];
 
 		// apply the filters
 		cFilt.applyFilter(srcImage,width,height, greyImage, GRAY_FILTER);
 		cFilt.applyFilter(srcImage,width,height, sepiaImage, SEPIA_FILTER);
+                edgeDet.sobelOperator(srcImage, sobelImage, width, height);
 
 		// write the filtered images in PPM files
 		writePPM(greyImage, "pictures/gray.ppm", width, height);
 		writePPM(sepiaImage, "pictures/sepia.ppm", width, height);
+                writePPM(sobelImage, "pictures/sobel.ppm", width, height);
 	}
 	catch(std::logic_error e){
 
