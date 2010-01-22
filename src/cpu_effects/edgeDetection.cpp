@@ -4,13 +4,13 @@
  *
  * Created on 15. Januar 2010, 17:41
  */
-#include "edgeDetection.h"
+#include "cpu_effects/edgeDetection.h"
 #include "types.h"
 
 using namespace GRAVID;
 
 
-void EdgeDetection::sobelOperator(RGB* pixarray, RGB* output_pic, int width, int height) {
+void EdgeDetection::sobelOperator(RGBA* pixarray, RGBA* output_pic, int width, int height) {
     /* convert colour-picture into grayscale */
     /* malloc have to be done from the host */
     unsigned char* gray = (unsigned char*) malloc (sizeof(unsigned char)*width*height);

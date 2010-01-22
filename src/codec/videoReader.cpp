@@ -1,49 +1,40 @@
 /*
- * video.cpp
+ * videoReader.cpp
  *
  *  Created on: Jan 7, 2010
  *      Author: lars
  */
 
-#include "videoReader.h"
-#include "exceptions.h"
+#include "codec/videoReader.h"
+#include "types.h"
 
-#include <string>
 extern "C"{
 	#include <libswscale/swscale.h>
+	#include <libavformat/avformat.h>
 }
 
-#include <iostream>
+#include <stdexcept>
 
 using namespace GRAVID;
 
-// TODO adapt this to RGBA
-
-VideoReader::VideoReader(const char* filename) throw (FileNotFound, std::logic_error){
-
+VideoReader::VideoReader(const char* filename){
 	// initialize the members
 	this->pFormatCtx = NULL;
 	this->pCodecCtx = NULL;
 	this->pFrame = NULL;
-	this->pRGBFrame = NULL;
-	this->buffer = NULL;
+	this->pRGBAFrame = NULL;
+	this->pLocalBuffer = NULL;
+	this->pSwsCtx = NULL;
 	this->videoStreamIndex = -1;
-	this->nextPos = 0;
 	this->endOfFile = false;
 
 	// open the video file
-	if(av_open_input_file(&(this->pFormatCtx), filename, NULL, 0, NULL)!=0){
-		std::string error = "File \"";
-		error.append(filename);
-		error.append("\" not found");
-		throw FileNotFound(error);
-	}
+	if(av_open_input_file(&(this->pFormatCtx), filename, NULL, 0, NULL)!=0)
+		this->errorHappened("video file not found");
 
 	// retrieve stream information
-	if(av_find_stream_info(this->pFormatCtx)<0){
-		std::string error = "couldn't find stream information";
-		throw std::logic_error(error);
-	}
+	if(av_find_stream_info(this->pFormatCtx)<0)
+		this->errorHappened("couldn't find stream information");
 
 	// Find the first video stream
 	for(unsigned char i=0; i<this->pFormatCtx->nb_streams; i++){
@@ -52,10 +43,8 @@ VideoReader::VideoReader(const char* filename) throw (FileNotFound, std::logic_e
 	    break;
 	  }
 	}
-	if(-1 == this->videoStreamIndex){
-		std::string error = "could't find any video stream";
-		throw std::logic_error(error);
-	}
+	if(-1 == this->videoStreamIndex)
+		this->errorHappened("the video file doesn't contain any video stream");
 	else{
 		this->pCodecCtx=this->pFormatCtx->streams[this->videoStreamIndex]->codec;
 		// set width and height as well
@@ -63,45 +52,60 @@ VideoReader::VideoReader(const char* filename) throw (FileNotFound, std::logic_e
 		this->height = this->pCodecCtx->height;
 	}
 
-	// get the actual codec that is used by the found video stream
+	// find a decoder for the codec that is used by the found video stream
 	AVCodec *pCodec = NULL;
 	pCodec = avcodec_find_decoder(this->pCodecCtx->codec_id);
-	if(NULL == pCodec){
-		std::string error = "unsupported codec";
-		throw std::logic_error(error);
-	}
-	if(avcodec_open(this->pCodecCtx, pCodec) < 0){
-		std::string error = "couldn't open codec";
-		throw std::logic_error(error);
-	}
+	if(NULL == pCodec)
+		this->errorHappened("this video contains an unsupported codec");
+	if(avcodec_open(this->pCodecCtx, pCodec) < 0)
+		this->errorHappened("codec could not be opened");
 
 	// allocate space for the original video frame
 	this->pFrame = avcodec_alloc_frame();
 	// and some for the RGBA variant of the frame above
-	this->pRGBFrame = avcodec_alloc_frame();
-	if(NULL == this->pFrame || NULL == this->pRGBFrame){
-		std::string error = "couldn't allocate frames";
-		throw std::logic_error(error);
-	}
+	this->pRGBAFrame = avcodec_alloc_frame();
+	if(NULL == this->pFrame || NULL == this->pRGBAFrame)
+		this->errorHappened("not enough memory to allocate frames");
 
-	// determine the required buffer size for an RGB image
-	int numBytes = avpicture_get_size(PIX_FMT_RGB24,this->pCodecCtx->width, this->pCodecCtx->height);
+	// determine the required buffer size for an RGBA image
+	int numBytes = avpicture_get_size(PIX_FMT_BGR32,this->pCodecCtx->width, this->pCodecCtx->height);
 	// allocate the buffer
-	buffer = (uint8_t *)av_malloc(numBytes*sizeof(uint8_t));
-	// associate the buffer to the RGB image
-	avpicture_fill((AVPicture *)this->pRGBFrame, this->buffer, PIX_FMT_RGB24, this->pCodecCtx->width, this->pCodecCtx->height);
+	pLocalBuffer = (uint8_t *)av_malloc(numBytes*sizeof(uint8_t));
+
+	// use the local buffer by default
+	this->useOwnFrameBuffer();
+
+	// prepare color space conversion context
+	this->pSwsCtx = sws_getContext(this->pCodecCtx->width, this->pCodecCtx->height,
+									this->pCodecCtx->pix_fmt, this->pCodecCtx->width,
+									this->pCodecCtx->height, PIX_FMT_BGR32,
+									SWS_BILINEAR, NULL, NULL, NULL);
+	if(NULL == this->pSwsCtx)
+		this->errorHappened("error while initializing sws-context");
+}
+
+void VideoReader::errorHappened(const char* error){
+	this->errorMsg = error;
+	throw std::logic_error(this->errorMsg);
 }
 
 VideoReader::~VideoReader(){
+	// free the sws-context
+	if(NULL != this->pSwsCtx)
+		sws_freeContext(this->pSwsCtx);
+
+	// free the packet
+	av_free_packet(&this->packet);
+
 	// free the raw data buffer
-	if(NULL != this->buffer)
-		av_free(this->buffer);
+	if(NULL != this->pLocalBuffer)
+		av_free(this->pLocalBuffer);
 
 	// free the frames
 	if(NULL != this->pFrame)
 		av_free(this->pFrame);
-	if(NULL != this->pRGBFrame )
-		av_free(this->pRGBFrame);
+	if(NULL != this->pRGBAFrame )
+		av_free(this->pRGBAFrame);
 
 	// close the codec-context
 	if(NULL != this->pCodecCtx)
@@ -112,87 +116,77 @@ VideoReader::~VideoReader(){
 		av_close_input_file(this->pFormatCtx);
 }
 
-RGB* VideoReader::getNextFrame()  throw(std::logic_error){
+void VideoReader::associateCurrentBuffer(){
+	// associate the buffer to the RGBA image
+	avpicture_fill((AVPicture *)this->pRGBAFrame, this->pCurrentBuffer, PIX_FMT_BGR32,
+					this->pCodecCtx->width, this->pCodecCtx->height);
+}
 
-	// return NULL if the end of the video has been reached
+void VideoReader::useOwnFrameBuffer(){
+	this->pCurrentBuffer = this->pLocalBuffer;
+	this->associateCurrentBuffer();
+}
+
+void VideoReader::changeFrameBuffer(void* pFrameBuffer){
+	this->pCurrentBuffer = (uint8_t*) pFrameBuffer;
+	this->associateCurrentBuffer();
+}
+
+void VideoReader::decodeNextFrame(){
+
+	// the end of the video has been reached
 	if(!this->hasNextFrame())
-		return NULL;
+		this->errorHappened("end of video stream reached");
 
 	// read the video file packet for packet;
 	// initialized with zero as to state, that no frame has yet been decompressed
 	int frameFinished = 0;
-	AVPacket packet;
 	int endOfFileIndicator;
 	// only loop until the next frame or the end of the video stream has been reached
-	while(0 == (endOfFileIndicator = av_read_frame(this->pFormatCtx, &packet)) && frameFinished == 0){
+	while(0 == (endOfFileIndicator = av_read_frame(this->pFormatCtx, &this->packet)) && frameFinished == 0){
 		// check if the stream packet belongs to the video stream of the file
-		if(packet.stream_index == this->videoStreamIndex){
+		if(this->packet.stream_index == this->videoStreamIndex){
 			// decode the frame
-			avcodec_decode_video(this->pCodecCtx, this->pFrame, &frameFinished, packet.data, packet.size);
+			avcodec_decode_video(this->pCodecCtx, this->pFrame, &frameFinished,
+									this->packet.data, this->packet.size);
 		}
 	}
-	// set the member if the end of the stream has been reached
+	// set the member if the last frame has been decoded
 	if(0 > endOfFileIndicator)
 		this->endOfFile = true;
 
-	// prepare the conversion
-	SwsContext *pSwsCtx;
-	pSwsCtx = sws_getContext(this->pCodecCtx->width,
-								this->pCodecCtx->height,
-								this->pCodecCtx->pix_fmt,
-								this->pCodecCtx->width,
-								this->pCodecCtx->height,
-								PIX_FMT_RGB24,
-								SWS_BILINEAR,
-								NULL, NULL, NULL);
-	if(NULL == pSwsCtx){
-		std::string error = "couldn't initialize the conversion context";
-		throw std::logic_error(error);
-	}
-
 	// convert the frame from YUV to RGB
-	// TODO find a way to suppress the warnings for non-accelerated color conversion,
-	// 		as the outputting slows down the application
-	sws_scale(pSwsCtx,
+	sws_scale(this->pSwsCtx,
 				this->pFrame->data,
 				this->pFrame->linesize,
 				0,
 				this->pCodecCtx->height,
-				this->pRGBFrame->data,
-				this->pRGBFrame->linesize);
-	// free the requested packet
-	av_free_packet(&packet);
-	// return the frame as an RGB representation
-	return (RGB* )this->pRGBFrame->data[0];
+				this->pRGBAFrame->data,
+				this->pRGBAFrame->linesize);
 }
 
 VideoInfo VideoReader::getVideoInfo(){
-	VideoInfo tmp;
-
 	// the video stream of the file
 	AVStream* v_st = this->pFormatCtx->streams[this->videoStreamIndex];
 
+	VideoInfo tmp;
+
+	// set height, width and channel format
 	tmp.width = this->width;
 	tmp.height = this->height;
-	tmp.pixelFMT = PIX_FMT_RGB24;
-	// total frame number
+	tmp.pixelFMT = PIX_FMT_BGR32;
+
+	// set the total frame number
 	tmp.nb_frames = v_st->duration;
-	// calculate the frame rate
+	// set AVRational framerate
 	tmp.frame_rate = v_st->r_frame_rate;
+	// calculate the frame rate
 	float frame_rate = v_st->r_frame_rate.num/(float)v_st->r_frame_rate.den;
 	// duration in seconds
 	tmp.duration = tmp.nb_frames / frame_rate;
 
-	// retrieve the first audio stream, if any
-	tmp.pAudioStream = NULL;
-	for(unsigned int i = 0; i < this->pFormatCtx->nb_streams;i++){
-		if(this->pFormatCtx->streams[i]->codec->codec_type==CODEC_TYPE_AUDIO) {
-			tmp.pAudioStream=this->pFormatCtx->streams[i];
-			break;
-		}
-	}
-	// set the bit-rate
-	tmp.bit_rate = this->pFormatCtx->bit_rate;
+	// set the size in bytes for a single frame of this video
+	tmp.byteSize = tmp.width * tmp.height * sizeof(RGBA);
 
 	return tmp;
 }

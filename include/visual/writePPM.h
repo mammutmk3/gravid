@@ -22,7 +22,7 @@ namespace GRAVID{
 	 * @param height the height of the PPM image
 	 *
 	 */
-	void writePPM(const RGB* image, const char* filename, unsigned short width, unsigned short height);
+	void writePPM(const RGBA* image, const char* filename, unsigned short width, unsigned short height);
 }
 
 #endif /* WRITEPPM_H_ */
