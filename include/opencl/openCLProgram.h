@@ -9,8 +9,9 @@
 #define OPENCLPROGRAM_H_
 
 #include <CL/cl.h>
-#include <stdexcept>
 #include <string>
+
+#include "types.h"
 
 namespace GRAVID{
 
@@ -36,17 +37,18 @@ namespace GRAVID{
 			cl_context clCtx;
 			// the current cl-program
 			cl_program clProgram;
-			// the loaded kernel within the loaded source
-			cl_kernel clKernel;
-			// the command queue for that kernel
+			// the command queue
 			cl_command_queue cmdQ;
+
+			// this string get's encapsulated into an exception that is beeing thrown, whenever somtehing unexpected happens
+			std::string errorMsg;
 
 			/**
 			 * takes a C-string as error message an throws a std::logic_error excetion including it
 			 *
-			 * @param error contains the error message that can by the exception
+			 * @param error contains the error message that can be read from the exception
 			 */
-			void errorHappened(const char* error) throw(std::logic_error);
+			void errorHappened(const char* error);
 
 			/**
 			 * reads a file containg an OpenCL program and returning the content as a string object
@@ -54,35 +56,40 @@ namespace GRAVID{
 			 * @param the absolute or relative path to the file including the filename itself
 			 *
 			 * @return the string containing the files content
-			 * TODO add FileNotFound Exception support
 			 */
-			std::string readKernel(const char* filename);
-
-		public:
-			OpenCLProgram() throw(std::logic_error);
-			~OpenCLProgram();
+			std::string readProgram(const char* filename);
 
 			/**
 			 * loads an external cl-file and creates an openCL program out of that
 			 *
 			 * @param the absolute or relative path to the file including the filename itself
 			 */
-			void loadProgram(const char* filename, const char* kernelName) throw(std::logic_error);
+			void loadProgram(const char* filename);
+
+		public:
+			OpenCLProgram(const char* filename);
+			~OpenCLProgram();
 
 			/**
-			 * returns the number of arguments the loaded kernel owns
-			 */
-			unsigned char getNBKernelArgs() throw(std::logic_error);
-
-			/**
-			 * set an argument of the kernel
+			 * returns the OpenCL context
 			 *
-			 * @param index the index of the argument in the list of kernel parameters. Must be within [0,getNBKernelArgs-1].
-			 * @param size the number of bytes that have to be allocated for the argument value
-			 * @param argumentValue the memmory object that is supposed to be the kernels argument
+			 * @return the OpenCL context
 			 */
-			template <typename T>
-			void setKernelArgument(const unsigned char index, const size_t size, T& argumentValue) throw(std::logic_error);
+			cl_context getContext(){return this->clCtx;}
+
+			/**
+			 * returns the command queue
+			 *
+			 * @return the command queue
+			 */
+			cl_command_queue getCommandQueue(){return this->cmdQ;}
+
+			/**
+			 * returns the created cl program
+			 *
+			 * @return the cl program created from the specified file
+			 */
+			cl_program getProgram(){return this->clProgram;}
 	};
 }
 

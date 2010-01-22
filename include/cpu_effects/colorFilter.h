@@ -26,7 +26,7 @@ namespace GRAVID{
 		 * @param srcPixel pixel of the original image
 		 * @param dstPixel pixel of the filtered image
 		 */
-		void applySepia(const RGB& srcPixel, RGB& dstPixel);
+		void applySepia(const RGBA& srcPixel, RGBA& dstPixel);
 
 		/**
 		 * applies the humanoid gray-color effect to a single pixel
@@ -34,7 +34,7 @@ namespace GRAVID{
 		 * @param srcPixel pixel of the original image
 		 * @param dstPixel pixel of the filtered image
 		 */
-		void applyGray(const RGB& srcPixel, RGB& dstPixel);
+		void applyGray(const RGBA& srcPixel, RGBA& dstPixel);
 
 	public:
 
@@ -48,10 +48,10 @@ namespace GRAVID{
 		 * @param height the height of the images in pixels
 		 * @param dstImage 24-bit RGB image where the converted image is written to
 		 */
-		void applyFilter(const RGB* srcImage,
+		void applyFilter(const RGBA* srcImage,
 							const unsigned short width,
 							const unsigned short height,
-							RGB* dstImage,
+							RGBA* dstImage,
 							enum FilterType fType);
 
 	};

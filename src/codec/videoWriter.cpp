@@ -5,10 +5,10 @@
  *      Author: lars
  */
 
-#include "videoWriter.h"
+#include "codec/videoWriter.h"
 
 #include <iostream>
-#include "writePPM.h"
+#include <stdexcept>
 
 using namespace GRAVID;
 using std::logic_error;
@@ -125,7 +125,7 @@ AVStream* VideoWriter::add_video_stream(enum CodecID codec_id){
     c->codec_type = CODEC_TYPE_VIDEO;
 
     // put sample parameters
-    c->bit_rate = this->vInfo.bit_rate;
+    c->bit_rate = 400000;
     // resolution must be a multiple of two
     c->width = this->vInfo.width;
     c->height = this->vInfo.height;
@@ -182,7 +182,7 @@ void VideoWriter::openVideo(){
        picture is needed too. It is then converted to the required
        output format */
     tmp_picture = NULL;
-	tmp_picture = alloc_picture(PIX_FMT_RGB24);
+	tmp_picture = alloc_picture(PIX_FMT_BGR32);
 	if (NULL == tmp_picture)
 		this->errorHappened("couldn't allocate temporary picture");
 
@@ -207,7 +207,7 @@ AVFrame* VideoWriter::alloc_picture(enum PixelFormat pix_fmt){
     return picture;
 }
 
-void VideoWriter::writeMultiMedFrame(RGB* frame){
+void VideoWriter::writeMultiMedFrame(RGBA* frame){
 
     if(this->video_pts < this->vInfo.duration) {
         if (NULL != this->video_st)
@@ -217,7 +217,7 @@ void VideoWriter::writeMultiMedFrame(RGB* frame){
     }
 }
 
-void VideoWriter::write_video_frame(RGB* frame) throw (std::logic_error){
+void VideoWriter::write_video_frame(RGBA* frame) throw (std::logic_error){
     int out_size, ret;
     AVCodecContext *c;
     static struct SwsContext *img_convert_ctx;
@@ -225,10 +225,10 @@ void VideoWriter::write_video_frame(RGB* frame) throw (std::logic_error){
 	c = this->video_st->codec;
 
 	// always true for us, as we convert RGB to YUV
-	if (PIX_FMT_RGB24 != STREAM_PIX_FMT) {
+	if (PIX_FMT_BGR32 != STREAM_PIX_FMT) {
 		if (img_convert_ctx == NULL) {
 			img_convert_ctx = sws_getContext(c->width, c->height,
-											 PIX_FMT_RGB24,
+											 PIX_FMT_BGR32,
 											 c->width, c->height,
 											 STREAM_PIX_FMT,
 											 SWS_BICUBIC, NULL, NULL, NULL);

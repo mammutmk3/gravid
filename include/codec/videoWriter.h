@@ -77,7 +77,7 @@ namespace GRAVID{
 		/**
 		 * writes one single frame to the video stream
 		 */
-		void write_video_frame(RGB* frame) throw (std::logic_error);
+		void write_video_frame(RGBA* frame) throw (std::logic_error);
 
 	public:
 		/* constructor */
@@ -89,7 +89,7 @@ namespace GRAVID{
 		/**
 		 * writes the wanted video
 		 */
-		void writeMultiMedFrame(RGB* frame);
+		void writeMultiMedFrame(RGBA* frame);
 
 		/**
 		 * writes the trailer of the video file and finalizes it with that action

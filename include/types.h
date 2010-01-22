@@ -14,17 +14,17 @@ extern "C" {
 
 namespace GRAVID{
 	/**
-	 * this struct represents the color information for 1 pixel in an 24-bit RGB image
+	 * this struct represents the color information for 1 pixel in an 32-bit RGBA image
 	 */
-	struct RGB{
+	struct RGBA{
 		unsigned char r;
 		unsigned char g;
 		unsigned char b;
+		unsigned char a;
 	};
 
 	/**
-	 * this struct transfers necessary information from the VideoReader to the VideoWriter
-	 * the last uses this information to set up its video stream
+	 * struct that contains valuable information about the video stream of a video file
 	 */
 	struct VideoInfo{
 		// width and height of the single frames
@@ -37,10 +37,8 @@ namespace GRAVID{
 		AVRational frame_rate;
 		// the total number of frames
 		unsigned int nb_frames;
-		// a pointer to the videos audio stream
-		AVStream* pAudioStream;
-		// the bit-rate for the stream
-		int bit_rate;
+		// size in bytes of a single frame
+		size_t byteSize;
 	};
 }
 

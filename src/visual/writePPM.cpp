@@ -5,14 +5,14 @@
  *      Author: lars
  */
 
-#include "writePPM.h"
+#include "visual/writePPM.h"
 #include "types.h"
 
 #include <iostream>
 #include <fstream>
 
 
-void GRAVID::writePPM(const RGB* image, const char* filename, unsigned short width, unsigned short height){
+void GRAVID::writePPM(const RGBA* image, const char* filename, unsigned short width, unsigned short height){
 	std::fstream file;
 	file.open(filename,std::ios::out);
 	// write PPM mode,dimensions and maximum-color value

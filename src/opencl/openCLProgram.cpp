@@ -4,8 +4,9 @@
  *  Created on: Jan 13, 2010
  *      Author: lars
  */
-/*
-#include "openCLProgram.h"
+
+#include "opencl/openCLProgram.h"
+#include "types.h"
 
 #include <CL/cl.h>
 #include <stdexcept>
@@ -14,7 +15,11 @@
 
 using namespace GRAVID;
 
-OpenCLProgram::OpenCLProgram() throw(std::logic_error){
+OpenCLProgram::OpenCLProgram(const char* filename){
+	// initialize members
+	this->clCtx = NULL;
+	this->cmdQ = NULL;
+	this->clProgram = NULL;
 
 	// retrieve platform ids
 	this->pPlatformIDs = NULL;
@@ -22,7 +27,8 @@ OpenCLProgram::OpenCLProgram() throw(std::logic_error){
 	// stop, if there is no OpenCL platform
 	if(0 == this->nb_platforms)
 		this->errorHappened("no OpenCL capable platforms available");
-	this->pPlatformIDs = new cl_platform_id[this->nb_platforms]; // some memory is allocated that has to be freed in the destructor
+	// some memory is allocated that has to be freed in the destructor
+	this->pPlatformIDs = new cl_platform_id[this->nb_platforms];
 	this->errorCode = clGetPlatformIDs(this->nb_platforms,this->pPlatformIDs,NULL);
 	if(CL_SUCCESS != this->errorCode)
 		this->errorHappened("couldn't get the platform ids");
@@ -46,29 +52,31 @@ OpenCLProgram::OpenCLProgram() throw(std::logic_error){
 	this->clCtx = clCreateContext(clContProperties,this->nb_devices,this->pDeviceIDs,NULL,NULL,&this->errorCode);
 	if(CL_SUCCESS != this->errorCode)
 		this->errorHappened("couldn't create context");
+
+	// creating the commandQueue for the kernel
+	this->cmdQ = clCreateCommandQueue(this->clCtx, this->pDeviceIDs[0], NULL, &this->errorCode);
+	if(CL_SUCCESS != this->errorCode)
+		this->errorHappened("couldn't create command queue");
+
+	// load the actual program
+	this->loadProgram(filename);
 }
 
-void OpenCLProgram::errorHappened(const char* error) throw(std::logic_error){
-	std::string errorMsg = error;
+void OpenCLProgram::errorHappened(const char* error){
+	this->errorMsg = error;
 	throw std::logic_error(errorMsg);
 }
 
 OpenCLProgram::~OpenCLProgram(){
 
-	// preserve that order, cause some objects depend on each other
-	// best advide: release memory objects in reverse order that they have been allocated
+	if(NULL != this->cmdQ)
+		clReleaseCommandQueue(this->cmdQ);
 
-	// release allocated memory objects
-	// TODO actually do so, as soon as object oriented memory object management get's supported
+	if(NULL != this->clProgram)
+		clReleaseProgram(this->clProgram);
 
-
-	clReleaseCommandQueue(this->cmdQ);
-
-	clReleaseKernel(this->clKernel);
-
-	clReleaseProgram(this->clProgram);
-
-	clReleaseContext(this->clCtx);
+	if(NULL != this->clCtx)
+		clReleaseContext(this->clCtx);
 
 	if(NULL != this->pDeviceIDs)
 			delete(this->pDeviceIDs);
@@ -77,12 +85,15 @@ OpenCLProgram::~OpenCLProgram(){
 		delete(this->pPlatformIDs);
 }
 
-std::string OpenCLProgram::readKernel(const char* filename){
+std::string OpenCLProgram::readProgram(const char* filename){
 	std::ifstream inFile;
 	char buffer[256];
 	std::string resultString;
 
 	inFile.open(filename,std::ifstream::in);
+	if(inFile.fail())
+		this->errorHappened("kernel source-file not found");
+
 	while(inFile.good()){
 		inFile.getline(buffer,256);
 		resultString.append(buffer);
@@ -92,9 +103,10 @@ std::string OpenCLProgram::readKernel(const char* filename){
 	return resultString;
 }
 
-void OpenCLProgram::loadProgram(const char* filename, const char* kernelName) throw(std::logic_error){
+void OpenCLProgram::loadProgram(const char* filename){
+
 	// retrieve the kernel source
-	std::string kernelString = this->readKernel("../kernels/mandelbrot.cl");
+	std::string kernelString = this->readProgram(filename);
 	const char* kernel_cstr = kernelString.c_str();
 	size_t kernelLength = (size_t)kernelString.length();
 	this->clProgram = clCreateProgramWithSource(this->clCtx, 1, &kernel_cstr, &kernelLength,&this->errorCode);
@@ -114,40 +126,4 @@ void OpenCLProgram::loadProgram(const char* filename, const char* kernelName) th
 		totalError.append(errorMessage);
 		this->errorHappened(totalError.c_str());
 	}
-
-	// extract the kernel within the program
-	this->clKernel = clCreateKernel(this->clProgram,kernelName,&this->errorCode);
-	if(CL_SUCCESS != this->errorCode)
-		this->errorHappened("couldn't extract the specified kernel from the loaded source");
-
-	// creating the commandQueue for the kernel
-	this->cmdQ = clCreateCommandQueue(this->clCtx, this->pDeviceIDs[0], NULL, &this->errorCode);
-	if(CL_SUCCESS != this->errorCode)
-		this->errorHappened("couldn't create command queue");
 }
-
-unsigned char OpenCLProgram::getNBKernelArgs() throw(std::logic_error){
-	cl_uint nb_args;
-	this->errorCode = clGetKernelInfo(this->clKernel,CL_KERNEL_NUM_ARGS,sizeof(cl_uint),(void*)nb_args,NULL);
-	if(CL_INVALID_KERNEL == this->errorCode)
-		this->errorHappened("cannot retrieve argument number without a loaded kernel");
-	else if(CL_SUCCESS != this->errorCode)
-		this->errorHappened("undefined error occured while retrieving number of kernel arguments");
-	return (unsigned char)nb_args;
-}
-
-template <typename T>
-void OpenCLProgram::setKernelArgument(const unsigned char index, const size_t size, T& argumentValue) throw(std::logic_error){
-	// set the kernel argument
-	this->errorCode = clSetKernelArg(this->clKernel,0,size,(void*)&argumentValue);
-	switch(this->errorCode){
-		case CL_INVALID_KERNEL: this->errorHappened("couldn't set argument, because kernel hasn't been loaded yet."); break;
-		case CL_INVALID_ARG_INDEX : this->errorHappened("couldn't set argument, because the specified index is invalid."); break;
-		case CL_INVALID_MEM_OBJECT : this->errorHappened("couldn't set argument, because the memory object is invalid."); break;
-		case CL_INVALID_ARG_SIZE : this->errorHappened("couldn't set argument, because the size of the argument value and the specified size doesnt match."); break;
-		default: break;
-	}
-	if(CL_SUCCESS != this->errorCode)
-		this->errorHappened("undefined error happened while setting the kernel's argument");
-}
-*/

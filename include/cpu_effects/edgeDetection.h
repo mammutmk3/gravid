@@ -27,7 +27,7 @@ namespace GRAVID {
             
         }
         
-        void sobelOperator(RGB* pixarray, RGB* output_pic, int width, int height);
+        void sobelOperator(RGBA* pixarray, RGBA* output_pic, int width, int height);
     };
     
 }
