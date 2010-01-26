@@ -26,9 +26,12 @@ extern "C"{
 
 #include <CL/cl.h>
 
+#include <time.h>
+
 using namespace GRAVID;
 
 int main(int argc, char** argv){
+
 	// register all available codecs in mpeg
 	av_register_all();
 
@@ -54,31 +57,33 @@ int main(int argc, char** argv){
 		kernel.setKernelArgument(0, memMan.getInImage_dev());
 		kernel.setKernelArgument(1, memMan.getOutImage_dev());
 
-  //              EdgeDetection egde;
+                EdgeDetection edge;
 
 		char filename[100];
 		for(int i=0;i<50;i++){
 			// decode the frame
 			reader.decodeNextFrame();
 	
-//                        RGBA* output_pic = (RGBA*)malloc( vidInf.width * vidInf.height * sizeof( RGBA) );
-//                        egde.sobelOperator( memMan.getInputFrame(), output_pic, vidInf.width, vidInf.height );
+                        RGBA* output_pic = (RGBA*)malloc( vidInf.width * vidInf.height * sizeof( RGBA) );
+                        edge.sobelOperator( memMan.getInputFrame(), output_pic, vidInf.width, vidInf.height );
 
 			// copy it to the device
-			cl_event cToDev = memMan.updateInputFrame();
+//			cl_event cToDev = memMan.updateInputFrame();
 
 			// start the kernel
-			cl_event sKernel = kernel.start(clrFltr.getCommandQueue(),cToDev, vidInf.width, vidInf.height, 16, 16);
+//			cl_event sKernel = kernel.start(clrFltr.getCommandQueue(),cToDev, vidInf.width, vidInf.height, 16, 16);
 
 			// copy the results back
-			memMan.updateOutputFrame(sKernel);
+//			memMan.updateOutputFrame(sKernel);
 
 			// write the image to output
 			sprintf(filename,"pictures/pic%i.ppm",i);
 
-			writePPM(memMan.getOutputFrame(),filename,vidInf.width, vidInf.height);
-//			writePPM( output_pic,filename,vidInf.width, vidInf.height);
+//			writePPM(memMan.getOutputFrame(),filename,vidInf.width, vidInf.height);
+			writePPM( output_pic,filename,vidInf.width, vidInf.height);
 		}
+		
+	
 	}
 	catch(std::logic_error &e){
 		// print an error message
@@ -90,4 +95,14 @@ int main(int argc, char** argv){
 	/*
 	 * end useful stuff here
 	 */
+/*
+real	0m1.622s
+user	0m1.340s
+sys	0m0.272s
+
+real	0m2.544s
+user	0m2.140s
+sys	0m0.408s
+*/
+
 }
