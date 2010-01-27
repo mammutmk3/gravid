@@ -20,7 +20,6 @@ void GRAVID::writePPM(const RGBA* image, const char* filename, unsigned short wi
 	// write the pixels
 	for(int i=0;i<height;i++){
 		for(int j=0;j<width;j++){
-// 			printf("%d\n", (unsigned char)image[i*width+j].r);
 			file << (unsigned char)image[i*width+j].r
 					<< (unsigned char)image[i*width+j].g
 					<< (unsigned char)image[i*width+j].b;

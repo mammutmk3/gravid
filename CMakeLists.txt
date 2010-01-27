@@ -12,6 +12,9 @@ include_directories(${OPENCL_INCLUDE_DIR})
 find_package(FFMPEG REQUIRED)
 include_directories(${FFMPEG_INCLUDE_DIR})
 
+find_package(Glut REQUIRED)
+include_directories(${GLUT_INCLUDE_DIR})
+
 message("ffmpeg include path=${FFMPEG_INCLUDE_DIR}")
 #find_package(CUDA REQUIRED)
 
@@ -55,4 +58,4 @@ add_library(gravid-opencl SHARED src/opencl/openCLProgram.cpp src/opencl/kernel.
 add_library(gravid-visual SHARED  src/visual/writePPM.cpp)
 
 add_executable(gravid src/main_markus.cpp)
-target_link_libraries(gravid gravid-codec gravid-cpueffects gravid-opencl gravid-visual ${OPENCL_LIBRARIES} ${FFMPEG_LIBRARIES})
+target_link_libraries(gravid gravid-codec gravid-cpueffects gravid-opencl gravid-visual ${OPENCL_LIBRARIES} ${FFMPEG_LIBRARIES} "glut")

@@ -19,8 +19,6 @@ Kernel::Kernel(const cl_program& program, const char* kernelName){
 	this->kernel = clCreateKernel(program, kernelName,&this->errorCode);
 	if(CL_SUCCESS != this->errorCode)
 		this->errorHappened("couldn't extract the specified kernel from the loaded source");
-
-
 }
 
 Kernel::~Kernel(){
@@ -31,22 +29,6 @@ Kernel::~Kernel(){
 void Kernel::errorHappened(const char* error){
 	this->errorMsg = error;
 	throw std::logic_error(this->errorMsg);
-}
-
-cl_event Kernel::start(const cl_command_queue& cmdQ, const cl_event& waitFor,
-				const size_t globalWidth, const size_t globalHeight,
-				const size_t localWidth, const size_t localHeight){
-
-	const size_t glDim[2] = {globalWidth, globalHeight};
-	const size_t loDim[2] = {localWidth, localHeight};
-	// start the kernel as soon as the copy process is finished
-	this->errorCode = clEnqueueNDRangeKernel(cmdQ, this->kernel,
-												2, NULL, glDim, loDim,
-												1, &waitFor, &this->kernelFinished);
-	if(CL_SUCCESS != this->errorCode)
-		this->errorHappened("kernel couldn't be enqueued");
-
-	return this->kernelFinished;
 }
 
 unsigned char Kernel::getNBKernelArgs(){

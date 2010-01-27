@@ -18,8 +18,6 @@ namespace GRAVID{
 	private:
 		// the actual kernel itself
 		cl_kernel kernel;
-		// determines, wether the kernel has finished, or not
-		cl_event kernelFinished;
 
 		// the error message of the exception that is thrown, whenever something unexpected happens
 		std::string errorMsg;
@@ -60,25 +58,14 @@ namespace GRAVID{
 		}
 
 		/**
-		 * starts the kernel
-		 *
-		 * @param cmdQ the OpenCL command queue that the kernel is beeing enqueued in
-		 * @param waitFor the OpenCL event that must finish before the kernel will start
-		 * @param globalWidth the total width of all work items
-		 * @param globalHeight the total height of all work items
-		 * @param localWidth the width of a work group
-		 * @param localHeight the height of a work group
-		 *
-		 * @return the OpenCL event with which one can determine if the kernel has finished yet
-		 */
-		cl_event start(const cl_command_queue& cmdQ, const cl_event& waitFor,
-								const size_t globalWidth, const size_t globalHeight,
-								const size_t localWidth, const size_t localHeight);
-
-		/**
 		 * returns the number of arguments the loaded kernel owns
 		 */
 		unsigned char getNBKernelArgs();
+
+		/**
+		 * returns the OpenCL representation of the kernel
+		 */
+		cl_kernel getNativeKernel(){return this->kernel;}
 	};
 }
 
