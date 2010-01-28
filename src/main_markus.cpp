@@ -1,8 +1,7 @@
 /*
  * main.cpp
  *
- *  Created on: Jan 6, 2010
- *      Author: lars
+ *  http://jerome.jouvie.free.fr/OpenGl/Tutorials/Tutorial10.php#Tutorial
  */
 
 
@@ -13,6 +12,7 @@ extern "C"{
 #include "codec/videoReader.h"
 #include "types.h"
 #include "visual/writePPM.h"
+#include "visual/glDisplayer.h"
 #include "cpu_effects/edgeDetection.h"
 #include "cpu_effects/echoEffect.h"
 
@@ -24,6 +24,7 @@ extern "C"{
 #include "opencl/openCLProgram.h"
 #include "opencl/memoryManager.h"
 #include "opencl/kernel.h"
+#include "opencl/kernelExecutor.h"
 
 #include <CL/cl.h>
 
@@ -42,7 +43,7 @@ int main(int argc, char** argv){
 
 	try{
 		// create the decoder for a video file
-		VideoReader reader("videos/testvid.mpg");
+		VideoReader reader("videos/testvid2.mpg");
 		VideoInfo vidInf = reader.getVideoInfo();
 
 		// create the new OpenCL program to process that video
@@ -57,8 +58,19 @@ int main(int argc, char** argv){
 		// set the kernel parameters
 		kernel.setKernelArgument(0, memMan.getInImage_dev());
 		kernel.setKernelArgument(1, memMan.getOutImage_dev());
+		
+		
+		// create a Kernel-executor to launch as many kernels at one frame as wanted
+		KernelExecutor kExec(clrFltr.getCommandQueue(),vidInf.width, vidInf.height);
+		kExec.addKernel(kernel);
 
-                EdgeDetection edge;
+		// tell OpenGL what the OpenCL parts are
+		setToolChain(kExec, reader, memMan);
+		// display the results
+		glDisplay(argc,argv,vidInf.width,vidInf.height,memMan.getOutputFrame());
+
+/*
+		EdgeDetection edge;
 		EchoEffect echEff;
 		
 		size_t pic_size = vidInf.width * vidInf.height * sizeof( RGBA);
@@ -85,29 +97,26 @@ int main(int argc, char** argv){
 				continue;
 			}
 
-			echEff.renderEcho( inpic0, inpic1, inpic2, inpic3, inpic4, output_pic, vidInf.width, vidInf.height );
+			//echEff.renderEcho( inpic0, inpic1, inpic2, inpic3, inpic4, output_pic, vidInf.width, vidInf.height );
 
 				
-       //sobel                 RGBA* output_pic = (RGBA*)malloc( vidInf.width * vidInf.height * sizeof( RGBA) );
-         //sobel               edge.sobelOperator( memMan.getInputFrame(), output_pic, vidInf.width, vidInf.height );
+		//sobel cpu                 RGBA* output_pic = (RGBA*)malloc( vidInf.width * vidInf.height * sizeof( RGBA) );
+		//sobel cpu              edge.sobelOperator( memMan.getInputFrame(), output_pic, vidInf.width, vidInf.height );
 
-			// copy it to the device
-		//	cl_event cToDev = memMan.updateInputFrame();
+		// copy it to the device
+		cl_event cToDev = memMan.updateInputFrame();
 
-			// start the kernel
-		//	cl_event sKernel = kernel.start(clrFltr.getCommandQueue(),cToDev, vidInf.width, vidInf.height, 16, 16);
+		// start the kernel
+		cl_event sKernel = kernel.start(clrFltr.getCommandQueue(),cToDev, vidInf.width, vidInf.height, 16, 16);
 
-			// copy the results back
-		//	memMan.updateOutputFrame(sKernel);
+		// copy the results back
+		memMan.updateOutputFrame(sKernel);
 
-			// write the image to output
-			sprintf(filename,"pictures/pic%i.ppm",i);
+		// write the image to output
+		// sprintf(filename,"pictures/pic%i.ppm",i);
 
 //			writePPM(memMan.getOutputFrame(),filename,vidInf.width, vidInf.height);
-			writePPM( output_pic ,filename,vidInf.width, vidInf.height);
-		}
-		
-	
+//		writePPM( output_pic ,filename,vidInf.width, vidInf.height);*/
 	}
 	catch(std::logic_error &e){
 		// print an error message
@@ -115,18 +124,4 @@ int main(int argc, char** argv){
 		// close the program
 		exit(-1);
 	}
-
-	/*
-	 * end useful stuff here
-	 */
-/*
-real	0m1.622s
-user	0m1.340s
-sys	0m0.272s
-
-real	0m2.544s
-user	0m2.140s
-sys	0m0.408s
-*/
-
 }

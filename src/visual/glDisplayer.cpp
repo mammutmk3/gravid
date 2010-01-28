@@ -46,6 +46,9 @@ void draw(){
 	// copy the results back
 	cFromDev = pMemMan->updateOutputFrame(kernelsFinished);
 	clWaitForEvents(1,&cFromDev);
+	
+	// todo: hier den timecode einbauen
+	sleep(1);
 
 	// draw the frames
 	glDrawPixels(gl_window_width, gl_window_height, GL_RGBA, GL_UNSIGNED_BYTE, gl_display_image);
@@ -57,7 +60,7 @@ void draw(){
 void GRAVID::glDisplay(int argc, char** argv,
 				const unsigned short windowWidth, const unsigned short windowHeight,
 				RGBA* displayImage){
-
+	
 	// save the width and height
 	gl_window_width = windowWidth;
 	gl_window_height = windowHeight;
