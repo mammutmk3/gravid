@@ -42,7 +42,7 @@ int main(int argc, char** argv){
 
 	try{
 		// create the decoder for a video file
-		VideoReader reader("videos/testvid2.mpg");
+		VideoReader reader("videos/testvid.mpg");
 		VideoInfo vidInf = reader.getVideoInfo();
 
 		// create the new OpenCL program to process that video
@@ -60,31 +60,28 @@ int main(int argc, char** argv){
 
                 EdgeDetection edge;
 		EchoEffect echEff;
+		
+		size_t pic_size = vidInf.width * vidInf.height * sizeof( RGBA);
 
-                RGBA* output_pic = (RGBA*)malloc( vidInf.width * vidInf.height * sizeof( RGBA) );
-                RGBA* inpic0 = (RGBA*)malloc( vidInf.width * vidInf.height * sizeof( RGBA) );
-                RGBA* inpic1 = (RGBA*)malloc( vidInf.width * vidInf.height * sizeof( RGBA) );
-                RGBA* inpic2 = (RGBA*)malloc( vidInf.width * vidInf.height * sizeof( RGBA) );
-                RGBA* inpic3 = (RGBA*)malloc( vidInf.width * vidInf.height * sizeof( RGBA) );
-                RGBA* inpic4 = (RGBA*)malloc( vidInf.width * vidInf.height * sizeof( RGBA) );
-                inpic0 = NULL;
-		inpic1 = NULL;
-		inpic2 = NULL;
-		inpic3 = NULL;
-		inpic4 = NULL;
-
+		RGBA* output_pic = (RGBA*)malloc( vidInf.width * vidInf.height * sizeof( RGBA) );
+		RGBA* inpic0 = (RGBA*)malloc( vidInf.width * vidInf.height * sizeof( RGBA) );
+		RGBA* inpic1 = (RGBA*)malloc( vidInf.width * vidInf.height * sizeof( RGBA) );
+		RGBA* inpic2 = (RGBA*)malloc( vidInf.width * vidInf.height * sizeof( RGBA) );
+		RGBA* inpic3 = (RGBA*)malloc( vidInf.width * vidInf.height * sizeof( RGBA) );
+		RGBA* inpic4 = (RGBA*)malloc( vidInf.width * vidInf.height * sizeof( RGBA) );
+				
 		char filename[100];
 		for(int i=0;i<50;i++){
 			// decode the frame
 			reader.decodeNextFrame();
 
-			inpic4 = inpic3;
-			inpic3 = inpic2;
-			inpic2 = inpic1;
-			inpic1 = inpic0;
-			inpic0 = memMan.getInputFrame();
+			memcpy( inpic4, inpic3, pic_size);
+			memcpy( inpic3, inpic2, pic_size);
+			memcpy( inpic2, inpic1, pic_size);
+			memcpy( inpic1, inpic0, pic_size);
+			memcpy( inpic0, memMan.getInputFrame(), pic_size );
 
-			if ( inpic4 == NULL ) {
+			if ( i <= 4 ) {
 				continue;
 			}
 
