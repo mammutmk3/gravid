@@ -12,7 +12,8 @@ extern "C"{
 
 #include "codec/videoReader.h"
 #include "types.h"
-#include "visual/writePPM.h"
+#include "visual/glDisplayer.h"
+#include "opencl/kernelExecutor.h"
 
 #include <iostream>
 #include <cstdlib>
@@ -31,13 +32,9 @@ int main(int argc, char** argv){
 	// register all available codecs in mpeg
 	av_register_all();
 
-	/*
-	 * start useful stuff here
-	 */
-
 	try{
 		// create the decoder for a video file
-		VideoReader reader("/home/lars/Videos/video.mpg");
+		VideoReader reader("videos/video1.mpg");
 		VideoInfo vidInf = reader.getVideoInfo();
 
 		// create the new OpenCL program to process that video
@@ -48,30 +45,19 @@ int main(int argc, char** argv){
 		reader.changeFrameBuffer(memMan.getInputFrame());
 
 		// create a kernel for an effect
-		Kernel kernel(clrFltr.getProgram(),"grayFilter");
+		Kernel kernel(clrFltr.getProgram(),"sepiaFilter");
 		// set the kernel parameters
 		kernel.setKernelArgument(0, memMan.getInImage_dev());
 		kernel.setKernelArgument(1, memMan.getOutImage_dev());
 
-		char filename[100];
-		for(int i=0;i<50;i++){
-			// decode the frame
-			reader.decodeNextFrame();
-			// copy it to the device
-			cl_event cToDev = memMan.updateInputFrame();
+		// create a Kernel-executor to launch as many kernels at one frame as wanted
+		KernelExecutor kExec(clrFltr.getCommandQueue(),vidInf.width, vidInf.height);
+		kExec.addKernel(kernel);
 
-			// start the kernel
-			cl_event sKernel = kernel.start(clrFltr.getCommandQueue(),cToDev,
-												vidInf.width,vidInf.height,
-												16,16);
-
-			// copy the results back
-			memMan.updateOutputFrame(sKernel);
-
-			// write the image to output
-			sprintf(filename,"pictures/pic%i.ppm",i);
-			writePPM(memMan.getOutputFrame(),filename,vidInf.width, vidInf.height);
-		}
+		// tell OpenGL what the OpenCL parts are
+		setToolChain(kExec, reader, memMan);
+		// display the results
+		glDisplay(argc,argv,vidInf.width,vidInf.height,memMan.getOutputFrame());
 	}
 	catch(std::logic_error &e){
 		// print an error message
@@ -79,8 +65,4 @@ int main(int argc, char** argv){
 		// close the program
 		exit(-1);
 	}
-
-	/*
-	 * end useful stuff here
-	 */
 }

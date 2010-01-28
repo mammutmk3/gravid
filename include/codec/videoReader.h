@@ -4,6 +4,7 @@
  *  Created on: Jan 7, 2010
  *      Author: lars
  */
+#pragma once
 
 extern "C" {
 	#include <libavformat/avformat.h>
