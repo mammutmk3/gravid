@@ -12,6 +12,8 @@
 #include "codec/videoReader.h"
 #include "types.h"
 
+#include <sys/time.h>
+
 #include <GL/glut.h>
 #include <CL/cl.h>
 
@@ -28,10 +30,26 @@ RGBA* gl_display_image;
 // the tool chain
 KernelExecutor *pKExec;
 VideoReader *pReader;
+VideoInfo pVidInf;
 MemoryManager *pMemMan;
 
 // event to determine: if the copy processes to/from the device are finished, the kernels are finished
 cl_event cToDev, cFromDev, kernelsFinished;
+
+// to check, how much time elapsed since rendering the last frame
+timeval last_time;
+
+// to check, if the necessary waiting-time for fps is reached, so we can draw the next frame
+bool check_fps() {
+	timeval cur_time;
+	gettimeofday( &cur_time, NULL);
+	
+	int framerate = pVidInf.frame_rate.num / pVidInf.frame_rate.den;
+	if ( (cur_time.tv_usec - last_time.tv_usec) >= framerate )
+		return true;
+	
+	return false;
+}
 
 void draw(){
 	// decode the frame
@@ -48,7 +66,7 @@ void draw(){
 	clWaitForEvents(1,&cFromDev);
 	
 	// todo: hier den timecode einbauen
-	sleep(1);
+	while ( !check_fps() ) { }
 
 	// draw the frames
 	glDrawPixels(gl_window_width, gl_window_height, GL_RGBA, GL_UNSIGNED_BYTE, gl_display_image);
@@ -82,6 +100,9 @@ void GRAVID::glDisplay(int argc, char** argv,
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glPixelZoom( 1.0, -1.0 );
 	glRasterPos2d(-1,1);
+	
+	// initialize the fps-counter
+	gettimeofday( &last_time, NULL);
 
 	// start the gl-Loop
 	glutMainLoop();
@@ -90,5 +111,6 @@ void GRAVID::glDisplay(int argc, char** argv,
 void GRAVID::setToolChain(KernelExecutor &kExec, VideoReader &reader, MemoryManager &memMan){
 	pKExec = &kExec;
 	pReader = &reader;
+	pVidInf = pReader->getVideoInfo();
 	pMemMan = &memMan;
 }
