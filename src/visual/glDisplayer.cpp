@@ -6,6 +6,7 @@
  */
 
 #include "visual/glDisplayer.h"
+#include <iostream>
 
 #include "opencl/kernelExecutor.h"
 #include "opencl/memoryManager.h"
@@ -40,15 +41,22 @@ cl_event cToDev, cFromDev, kernelsFinished;
 timeval last_time;
 
 // to check, if the necessary waiting-time for fps is reached, so we can draw the next frame
-bool check_fps() {
+bool fps_ok() {
 	timeval cur_time;
 	gettimeofday( &cur_time, NULL);
 	
-	int framerate = pVidInf.frame_rate.num / pVidInf.frame_rate.den;
-	if ( (cur_time.tv_usec - last_time.tv_usec) >= framerate )
-		return true;
-	
-	return false;
+	long int framerate = ( pVidInf.frame_rate.num / pVidInf.frame_rate.den ) * 100;
+	long int elapsed_time= abs( cur_time.tv_usec - last_time.tv_usec );
+	if ( cur_time.tv_sec > last_time.tv_sec )
+			elapsed_time += 1000000;
+
+	if ( elapsed_time < framerate )
+		return false; 
+
+// 	std::cout << pVidInf.frame_rate.num << std::endl;
+// 	std::cout << pVidInf.frame_rate.den << std::endl;
+	gettimeofday( &last_time, NULL);
+	return true;
 }
 
 void draw(){
@@ -65,11 +73,12 @@ void draw(){
 	cFromDev = pMemMan->updateOutputFrame(kernelsFinished);
 	clWaitForEvents(1,&cFromDev);
 	
-	// todo: hier den timecode einbauen
-	while ( !check_fps() ) { }
-
 	// draw the frames
 	glDrawPixels(gl_window_width, gl_window_height, GL_RGBA, GL_UNSIGNED_BYTE, gl_display_image);
+	
+	// play video with correct timecode
+	while ( !fps_ok() ) { }
+	
 	glFlush();
 	if(pReader->hasNextFrame())
 		glutPostRedisplay();
@@ -102,7 +111,7 @@ void GRAVID::glDisplay(int argc, char** argv,
 	glRasterPos2d(-1,1);
 	
 	// initialize the fps-counter
-	gettimeofday( &last_time, NULL);
+	// gettimeofday( &last_time, NULL);
 
 	// start the gl-Loop
 	glutMainLoop();
