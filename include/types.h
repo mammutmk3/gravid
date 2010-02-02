@@ -13,6 +13,20 @@ extern "C" {
 }
 
 namespace GRAVID{
+
+	enum Image_Effect{
+		GRAY_FILTER,
+		SEPIA_FILTER,
+		EDGE_DETECTION,
+		GAUSS_BLUR
+	};
+
+	enum Video_Effect{
+		IMG_OVRLAY,
+		CAM_STAB,
+		NONE
+	};
+
 	/**
 	 * this struct represents the color information for 1 pixel in an 32-bit RGBA image
 	 */

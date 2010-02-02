@@ -9,6 +9,7 @@
 #define MEMORYMANAGER_H_
 
 #include "types.h"
+#include "opencl/doubleBuffer.h"
 
 #include <CL/cl.h>
 #include <string>
@@ -22,7 +23,7 @@ namespace GRAVID{
 		// specifies the image format of the frame
 		cl_image_format imgFmt;
 		// pinned input image on the host side
-		cl_mem srcImage2D_host;
+		/*cl_mem srcImage2D_host;
 		// pinned output image on the host side
 		cl_mem dstImage2D_host;
 		// device input image
@@ -35,11 +36,16 @@ namespace GRAVID{
 		RGBA* dstImage_mapped;
 		// origin and region sample of the image
 		size_t origin[3];
-		size_t region[3];
+		size_t region[3];*/
+		DoubleBuffer *pHost_in;
+		DoubleBuffer *pDevice_in;
+		DoubleBuffer *pHost_out;
+		DoubleBuffer *pDevice_out;
+		cl_mem tmpImage;
 
 		// events to keep track of asynchronous copies
-		cl_event copyToDevice;
-		cl_event copyFromDevice;
+		cl_event copyToDevice_event;
+		cl_event copyFromDevice_event;
 
 		// the error message contained in an exception, that is thrown whenever an error occurs
 		std::string errorMsg;
@@ -58,32 +64,58 @@ namespace GRAVID{
 		~MemoryManager();
 
 		/**
-		 * returns the pinned input image on the host
-		 *
-		 * @return the pinned input image on the host
+		 * retuns the address for the Decoder to write the next frame into
 		 */
-		RGBA* getInputFrame(){return this->srcImage_mapped;}
+		RGBA* getFrame_forDecoder(){return this->pHost_in->getBackBuffer_Pointer();}
+		//RGBA* getInputFrame(){return this->srcImage_mapped;}
 
 		/**
-		 * returns the pinned output image on the host
-		 *
-		 * @return the pinned output image on the host
+		 * returns the image object that contains the original image in the first place
 		 */
-		RGBA* getOutputFrame(){return this->dstImage_mapped;}
+		cl_mem getImage_Original(){return this->pDevice_in->getFrontBuffer();}
+
+		//RGBA* getOutputFrame(){return this->dstImage_mapped;}
 
 		/**
-		 * returns the device's input image to be used as a kernel argument
-		 *
-		 * @return the device's input image
+		 * returns the image object that can be used for intermediate results
+		 * in the case of multiple effects beeing applied for one frame
 		 */
-		cl_mem getInImage_dev(){return this->srcImage2D_dev;}
+		cl_mem getImage_Tempory(){return this->tmpImage;}
 
 		/**
-		 * returns the device's output image to be used as a kernel argument
-		 *
-		 * @return the device's output image
+		 * returns the image object representing the place where the last image effect in a sequence of kernels
+		 * finally writes the output image to. It's beeing used as a kernel parameter by the kernel executor
 		 */
-		cl_mem getOutImage_dev(){return this->dstImage2D_dev;}
+		cl_mem getImage_Output(){return this->pDevice_out->getBackBuffer();}
+
+		/**
+		 * returns the pointer to the processed frame that is ready for output by OpenGL or encoding by the encoder
+		 */
+		RGBA* getFrame_forEncoder(){return this->pHost_out->getFrontBuffer_Pointer();}
+
+
+		/**
+		 * THE DECODER MUST HAVE FINISHED IT'S WORK; OTHERWISE THE RESULT IS UNDEFINED
+		 * copies a single image from the input image buffer to the device
+		 *
+		 * @param kernelFinished event that indicates whether e preceeding kernel launch has finished yet
+		 */
+		void copyToDevice(cl_event kernelFinished);
+
+		/**
+		 * THE ENCODER MUST HAVE FINISHED IT'S WORK; OTHERWISE THE RESULT IS UNDEFINED
+		 * copies a single image from the output image buffer of the device to the device
+		 *
+		 * @param kernelFinished event that indicates whether e preceeding kernel launch has finished yet
+		 */
+		void copyFromDevice(cl_event kernelFinished);
+
+		cl_event getCopyToDevice_event(){return this->copyToDevice_event;}
+		cl_event getCopyFromDevice_event(){return this->copyFromDevice_event;}
+
+		//cl_mem getInImage_dev(){return this->srcImage2D_dev;}
+
+		//cl_mem getOutImage_dev(){return this->dstImage2D_dev;}
 
 		/**
 		 * synchronizes the input frame on the host with the input image on the device in an
@@ -91,7 +123,7 @@ namespace GRAVID{
 		 *
 		 * @return this event can be used to determine when the copy process is finished
 		 */
-		cl_event updateInputFrame();
+		//cl_event updateInputFrame();
 
 		/**
 		 * retrieves the latest frame from the device in an asynchronous copy.
@@ -101,7 +133,7 @@ namespace GRAVID{
 		 *
 		 * @return this event can be used to determine when the copy process is finished
 		 */
-		cl_event updateOutputFrame(const cl_event &waitingFor);
+		//cl_event updateOutputFrame(const cl_event &waitingFor);
 	};
 
 }

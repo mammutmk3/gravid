@@ -20,6 +20,9 @@ using std::logic_error;
 // adapt this to RGBA
 
 VideoWriter::VideoWriter(const char* filename, const VideoInfo vInfo) throw(std::logic_error){
+	// register all available codecs in mpeg
+	av_register_all();
+
 	// set the filename
 	this->filename = filename;
 	// set the conversion infos

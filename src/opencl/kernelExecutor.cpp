@@ -6,62 +6,47 @@
  */
 
 #include "opencl/kernelExecutor.h"
+#include "opencl/kernel.h"
+
 #include <stdexcept>
-#include <algorithm>
+#include <iostream>
 
 using namespace GRAVID;
 
 #define MAX_WORKGROUP_SIZE 256
 
-KernelExecutor::KernelExecutor(cl_command_queue cmdQ, const unsigned short globalWidth, const unsigned short globalHeight){
+KernelExecutor::KernelExecutor(cl_command_queue cmdQ,
+								cl_program program,
+								const Image_Effect* imgEffects,
+								const unsigned char nb_img_effects,
+								VideoInfo &vidInf){
 
 	// initialize members
-	this->globalDim = this->localDim = NULL;
 	this->lastKernel = NULL;
-
-	this->globalDim = new size_t[2];
-	this->globalDim[0] = globalWidth; this->globalDim[1] = globalHeight;
-	this->localDim = new size_t[2];
-
-	// find the maximum possible workgroup size
-	this->setWorkgroupSize();
-
 	this->cmdQ = cmdQ;
-}
 
-void KernelExecutor::setWorkgroupSize(){
-	size_t a,b;
-	int greaterIndex;
-	if(this->globalDim[0] > this->globalDim[1]){
-		greaterIndex = 0;
-		a = this->globalDim[0];
-		this->localDim[1] = 1;
+	// create kernels dynamically
+	Kernel *kernel;
+	for(int i=0;i< nb_img_effects;i++){
+		switch(imgEffects[i]){
+		case GRAY_FILTER: kernel = new Kernel(program, "grayFilter", vidInf.width, vidInf.height); break;
+		case SEPIA_FILTER: kernel = new Kernel(program, "sepiaFilter", vidInf.width, vidInf.height); break;
+		case EDGE_DETECTION: kernel = new Kernel(program, "grayFilter", vidInf.width, vidInf.height); break;
+		case GAUSS_BLUR: kernel = new Kernel(program, "grayFilter", vidInf.width, vidInf.height); break;
+		}
+		// add the kernel to the vector of kernel pointers
+		this->kernels.push_back(kernel);
 	}
-	else{
-		greaterIndex = 1;
-		a = this->globalDim[1];
-		this->localDim[0] = 1;
-	}
-	b = MAX_WORKGROUP_SIZE;
-	size_t tmp;
-	// computing the gcd of a and b
-	while(0 != b){
-		tmp = a%b;
-		a = b;
-		b = tmp;
-	}
-	this->localDim[greaterIndex] = a;
+	// TODO replace the grayFilters above with the real names
 }
 
 KernelExecutor::~KernelExecutor(){
-	if(NULL != this->globalDim)
-		delete this->globalDim;
-
-	if(NULL != this->localDim)
-		delete this->localDim;
-
 	if(NULL != this->lastKernel)
 		clReleaseEvent(this->lastKernel);
+
+	// delete all allocated kernels
+	for(size_t i=0;i<this->kernels.size();i++)
+		delete this->kernels[i];
 }
 
 void KernelExecutor::errorHappened(const char* error){
@@ -69,16 +54,32 @@ void KernelExecutor::errorHappened(const char* error){
 	throw std::logic_error(this->errorMsg);
 }
 
-void KernelExecutor::addKernel(Kernel &kernel){
-	this->kernels.push_back(kernel);
-}
+void KernelExecutor::executeAll(MemoryManager &memMan){
+	for(size_t i=0;i<this->kernels.size();i++){
+		Kernel *k = this->kernels[i];
+		// all even launches start from the original memory
+		if(0 == i%2){
+			k->setKernelArgument(0,memMan.getImage_Original());
+			// if this kernel isn't the last in line, the result goes to a temporary image
+			if(i != this->kernels.size()-1)
+				k->setKernelArgument(1,memMan.getImage_Tempory());
+			else{
+				k->setKernelArgument(1,memMan.getImage_Output());
+			}
+		}
+		else{
+			k->setKernelArgument(1,memMan.getImage_Tempory());
+			if(i != this->kernels.size()-1)
+				k->setKernelArgument(1,memMan.getImage_Original());
+			else
+				k->setKernelArgument(1,memMan.getImage_Output());
+		}
 
-void KernelExecutor::executeAll(const cl_event &waitFor){
-	for(int i=0;i<this->kernels.size();i++){
 		// start the kernel as soon as the copy process is finished
-		this->errorCode = clEnqueueNDRangeKernel(cmdQ, this->kernels[i].getNativeKernel(),
-													2, NULL, this->globalDim, this->localDim,
-													1, &waitFor, &this->lastKernel);
+		this->errorCode = clEnqueueNDRangeKernel(this->cmdQ, k->getNativeKernel(),
+													2, NULL, k->getGlobalDim(), k->getLocalDim(),
+													0, NULL, &this->lastKernel);
+
 		if(CL_SUCCESS != this->errorCode)
 			this->errorHappened("kernel couldn't be enqueued");
 	}
