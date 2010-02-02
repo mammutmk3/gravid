@@ -8,7 +8,9 @@
 #ifndef KERNELEXECUTOR_H_
 #define KERNELEXECUTOR_H_
 
+#include "types.h"
 #include "opencl/kernel.h"
+#include "opencl/memoryManager.h"
 
 #include <vector>
 #include <string>
@@ -18,10 +20,10 @@ namespace GRAVID{
 
 	class KernelExecutor{
 	private:
-		std::vector<Kernel> kernels;
+		std::vector<Kernel*> kernels;
 		cl_command_queue cmdQ;
-		size_t *globalDim;
-		size_t *localDim;
+
+		// event that determines whether the last enqueued kernel has finifhed it's computations
 		cl_event lastKernel;
 
 		std::string errorMsg;
@@ -33,14 +35,13 @@ namespace GRAVID{
 		 */
 		void errorHappened(const char* error);
 
-		/**
-		 * find maximum possible work group size and set it to localDim
-		 */
-		void setWorkgroupSize();
-
 	public:
 
-		KernelExecutor(cl_command_queue cmdQ, const unsigned short globalWidth, const unsigned short globalHeight);
+		KernelExecutor(cl_command_queue cmdQ,
+						cl_program program,
+						const Image_Effect* imgEffects,
+						const unsigned char nb_img_effects,
+						VideoInfo &vidInf);
 		~KernelExecutor();
 
 		/**
@@ -51,16 +52,11 @@ namespace GRAVID{
 		unsigned char getKernelCount(){return this->kernels.size();}
 
 		/**
-		 * registers another Kernel for execution
-		 *
-		 * @param kernel the kernel to execute
-		 */
-		void addKernel(Kernel &kernel);
-
-		/**
 		 * executes all kernels enqueued asynchronously
+		 *
+		 * @param memMan the streaming pipeline manager that controls the images for the kernels
 		 */
-		void executeAll(const cl_event &waitFor);
+		void executeAll(MemoryManager &memMan);
 
 		/**
 		 * provides an event to track if alle launched kernels have finished work,

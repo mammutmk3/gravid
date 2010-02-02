@@ -5,18 +5,18 @@
  *      Author: lars
  */
 
+#include "threads.h"
 #include "visual/glDisplayer.h"
-#include <iostream>
 
 #include "opencl/kernelExecutor.h"
 #include "opencl/memoryManager.h"
 #include "codec/videoReader.h"
 #include "types.h"
 
-#include <sys/time.h>
-
 #include <GL/glut.h>
 #include <CL/cl.h>
+#include <iostream>
+#include <pthread.h>
 
 #include "cpu_effects/colorFilter.h"
 
@@ -31,63 +31,47 @@ RGBA* gl_display_image;
 // the tool chain
 KernelExecutor *pKExec;
 VideoReader *pReader;
-VideoInfo pVidInf;
 MemoryManager *pMemMan;
 
-// event to determine: if the copy processes to/from the device are finished, the kernels are finished
-cl_event cToDev, cFromDev, kernelsFinished;
-
-// to check, how much time elapsed since rendering the last frame
-timeval last_time;
-
-// to check, if the necessary waiting-time for fps is reached, so we can draw the next frame
-bool fps_ok() {
-	timeval cur_time;
-	gettimeofday( &cur_time, NULL);
-	
-	long int framerate = ( pVidInf.frame_rate.num / pVidInf.frame_rate.den ) * 100;
-	long int elapsed_time= abs( cur_time.tv_usec - last_time.tv_usec );
-	if ( cur_time.tv_sec > last_time.tv_sec )
-			elapsed_time += 1000000;
-
-	if ( elapsed_time < framerate )
-		return false; 
-
-// 	std::cout << pVidInf.frame_rate.num << std::endl;
-// 	std::cout << pVidInf.frame_rate.den << std::endl;
-	gettimeofday( &last_time, NULL);
-	return true;
-}
+bool firstLaunch = true, secondLaunch = false, encoderStarted = false;
+pthread_t decodeThread, displayThread;
 
 void draw(){
-	// decode the frame
-	pReader->decodeNextFrame();
-	// copy it to the device
-	cToDev = pMemMan->updateInputFrame();
-
-	// start the kernels
-	pKExec->executeAll(cToDev);
-	kernelsFinished = pKExec->getLastKernelEvent();
-
-	// copy the results back
-	cFromDev = pMemMan->updateOutputFrame(kernelsFinished);
-	clWaitForEvents(1,&cFromDev);
-	
-	// draw the frames
-	glDrawPixels(gl_window_width, gl_window_height, GL_RGBA, GL_UNSIGNED_BYTE, gl_display_image);
-	
-	// play video with correct timecode
-	while ( !fps_ok() ) { }
-	
-	glFlush();
-	if(pReader->hasNextFrame())
+	//decode first frame
+	if(pReader->hasNextFrame()){
+		// make sure no kernel is running and that the decoder has finished it's last frame
+		pthread_join(decodeThread,NULL);
+		pMemMan->copyToDevice(pKExec->getLastKernelEvent());
+		// decode a frame
+		pthread_create(&decodeThread,NULL,GRAVID::decode_Frame, (void*)pMemMan->getFrame_forDecoder());
+		// the pipelines has to be filled first
+		if(!firstLaunch){
+			pKExec->executeAll(*pMemMan);
+			// wait for the encoder
+			if(encoderStarted)
+				pthread_join(displayThread,NULL);
+			pMemMan->copyFromDevice(pKExec->getLastKernelEvent());
+			if(!secondLaunch){
+				// encode a frame
+				pthread_create(&displayThread,NULL,GRAVID::encode_Frame, (void*)pMemMan->getFrame_forEncoder());
+				//glDrawPixels(720, 576, GL_RGBA, GL_UNSIGNED_BYTE, pMemMan->getFrame_forEncoder());
+				encoderStarted = true;
+			}
+			else
+				secondLaunch = false;
+		}
+		else{
+			firstLaunch = false;
+			secondLaunch = true;
+		}
 		glutPostRedisplay();
+	}
 }
 
 void GRAVID::glDisplay(int argc, char** argv,
 				const unsigned short windowWidth, const unsigned short windowHeight,
 				RGBA* displayImage){
-	
+
 	// save the width and height
 	gl_window_width = windowWidth;
 	gl_window_height = windowHeight;
@@ -109,10 +93,10 @@ void GRAVID::glDisplay(int argc, char** argv,
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glPixelZoom( 1.0, -1.0 );
 	glRasterPos2d(-1,1);
-	
-	// initialize the fps-counter
-	// gettimeofday( &last_time, NULL);
 
+	//decode first frame
+	if(pReader->hasNextFrame())
+		pthread_create(&decodeThread,NULL,GRAVID::decode_Frame, (void*)pMemMan->getFrame_forDecoder());
 	// start the gl-Loop
 	glutMainLoop();
 }
@@ -120,6 +104,5 @@ void GRAVID::glDisplay(int argc, char** argv,
 void GRAVID::setToolChain(KernelExecutor &kExec, VideoReader &reader, MemoryManager &memMan){
 	pKExec = &kExec;
 	pReader = &reader;
-	pVidInf = pReader->getVideoInfo();
 	pMemMan = &memMan;
 }

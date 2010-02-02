@@ -18,6 +18,9 @@ extern "C"{
 using namespace GRAVID;
 
 VideoReader::VideoReader(const char* filename){
+	// register all available codecs in mpeg
+	av_register_all();
+
 	// initialize the members
 	this->pFormatCtx = NULL;
 	this->pCodecCtx = NULL;

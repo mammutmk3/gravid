@@ -11,6 +11,7 @@
 #include <CL/cl.h>
 #include <string>
 #include <stdexcept>
+#include <iostream> // TODO wieder rausnehmen
 
 namespace GRAVID{
 
@@ -24,6 +25,14 @@ namespace GRAVID{
 		// the cl error code
 		cl_int errorCode;
 
+		size_t global[2];
+		size_t local[2];
+
+		/**
+		 * tries to make a good guess for the local workgroup size and writes it to member local
+		 */
+		void guessWorkgroupSize();
+
 		/**
 		 * takes a C-string as error message an throws a std::logic_error excetion including it
 		 *
@@ -32,7 +41,8 @@ namespace GRAVID{
 		void errorHappened(const char* error);
 
 	public:
-		Kernel(const cl_program& program, const char* kernelName);
+		Kernel(const cl_program& program, const char* kernelName,
+				const size_t globalWidth, const size_t globalHeight);
 		~Kernel();
 
 		/**
@@ -66,6 +76,25 @@ namespace GRAVID{
 		 * returns the OpenCL representation of the kernel
 		 */
 		cl_kernel getNativeKernel(){return this->kernel;}
+
+		/**
+		 * initially a good guess is made for the local workgroup size.
+		 * This method provides you a way to override the guess with individual setups
+		 *
+		 * @param width the width of the work group
+		 * @param height the height of the work group
+		 */
+		void setWorkgroupDim(const unsigned short width, const unsigned short height);
+
+		/**
+		 * returns the global thread dimensions
+		 */
+		size_t* getGlobalDim(){return this->global;}
+
+		/**
+		 * returns the workgroup size
+		 */
+		size_t* getLocalDim(){return this->local;}
 	};
 }
 
