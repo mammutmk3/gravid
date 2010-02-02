@@ -9,7 +9,7 @@
 #define CMDLINEPARSER_H_
 
 #include "types.h"
-#include "common.h"
+#include "common_gravid.h"
 #include <string>
 
 namespace GRAVID{

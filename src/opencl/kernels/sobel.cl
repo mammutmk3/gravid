@@ -1,6 +1,6 @@
 const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE |	CLK_ADDRESS_CLAMP | CLK_FILTER_LINEAR;
 
-__kernel void sobel(__read_only image2d_t src_img, __global uchar4* dst_img){
+__kernel void sobel(__read_only image2d_t src_img, __write_only image2d_t dst_img){
 
 	__private size_t x = get_global_id(0);
 	__private size_t y = get_global_id(1);
@@ -64,10 +64,8 @@ __kernel void sobel(__read_only image2d_t src_img, __global uchar4* dst_img){
 		tmp.x = act_pix.x;
 		tmp.y = act_pix.y;
 		tmp.z = act_pix.z;
-		dst_img[y * dim.x + x] = tmp;
 	} else {
 		tmp.x = tmp.y = tmp.z = 0;
-		dst_img[y * dim.x + x] = tmp;
 	}
-	/*	write_imageui( dst_img, (int2)(x,y), act_pix );*/
+	write_imageui( dst_img, (int2)(x,y), tmp );
 }

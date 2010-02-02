@@ -31,7 +31,7 @@ KernelExecutor::KernelExecutor(cl_command_queue cmdQ,
 		switch(imgEffects[i]){
 		case GRAY_FILTER: kernel = new Kernel(program, "grayFilter", vidInf.width, vidInf.height); break;
 		case SEPIA_FILTER: kernel = new Kernel(program, "sepiaFilter", vidInf.width, vidInf.height); break;
-		case EDGE_DETECTION: kernel = new Kernel(program, "grayFilter", vidInf.width, vidInf.height); break;
+		case EDGE_DETECTION: kernel = new Kernel(program, "sobelFilter", vidInf.width, vidInf.height); break;
 		case GAUSS_BLUR: kernel = new Kernel(program, "grayFilter", vidInf.width, vidInf.height); break;
 		}
 		// add the kernel to the vector of kernel pointers
@@ -55,6 +55,7 @@ void KernelExecutor::errorHappened(const char* error){
 }
 
 void KernelExecutor::executeAll(MemoryManager &memMan){
+	cl_event* waitEvent;
 	for(size_t i=0;i<this->kernels.size();i++){
 		Kernel *k = this->kernels[i];
 		// all even launches start from the original memory
@@ -68,7 +69,7 @@ void KernelExecutor::executeAll(MemoryManager &memMan){
 			}
 		}
 		else{
-			k->setKernelArgument(1,memMan.getImage_Tempory());
+			k->setKernelArgument(0,memMan.getImage_Tempory());
 			if(i != this->kernels.size()-1)
 				k->setKernelArgument(1,memMan.getImage_Original());
 			else
@@ -78,8 +79,7 @@ void KernelExecutor::executeAll(MemoryManager &memMan){
 		// start the kernel as soon as the copy process is finished
 		this->errorCode = clEnqueueNDRangeKernel(this->cmdQ, k->getNativeKernel(),
 													2, NULL, k->getGlobalDim(), k->getLocalDim(),
-													0, NULL, &this->lastKernel);
-
+													0, NULL, waitEvent);
 		if(CL_SUCCESS != this->errorCode)
 			this->errorHappened("kernel couldn't be enqueued");
 	}

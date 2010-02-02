@@ -3,6 +3,8 @@ const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE |	CLK_ADDRESS_CLAMP_TO_EDG
 /*__kernel void echoeffect(__read_only image3d_t src_img, __global uchar4* dst_img){*/
 __kernel void echoeffect(__read_only image3d_t src_img, __global uchar4* dst_img, __global int gRandomness, __global int gOpacity){
 
+/* paramter Wievielter Aufruf (Frame) das ist, daraus berechnen wieviel Frames es davor überhaupt gibt*/
+
 	__private size_t x = get_global_id(0);
 	__private size_t y = get_global_id(1);
 	__local int randomness;
@@ -10,7 +12,7 @@ __kernel void echoeffect(__read_only image3d_t src_img, __global uchar4* dst_img
 
 	/* opacity of the overlayed frames, 102 = 40%*/
 	/* fetch to shared memory with barrier() */
-	if ( get_local_id( 0 ) == 0 ) {
+	if ( get_local_id( 0 ) & get_global_id(1) == 0 ) {
 		randomness  = gRandomness;
 		opacity = gOpacity;
 	}

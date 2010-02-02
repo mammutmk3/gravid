@@ -57,5 +57,5 @@ add_library(gravid-cpueffects SHARED  src/cpu_effects/edgeDetection.cpp src/cpu_
 add_library(gravid-opencl SHARED src/opencl/openCLProgram.cpp src/opencl/kernel.cpp src/opencl/memoryManager.cpp src/opencl/kernelExecutor.cpp src/opencl/doubleBuffer.cpp)
 add_library(gravid-visual SHARED  src/visual/writePPM.cpp src/visual/glDisplayer.cpp)
 
-add_executable(gravid src/main.cpp src/common.cpp src/threads.cpp)
+add_executable(gravid src/main.cpp src/common.cpp src/threads.cpp src/cmdLineParser.cpp)
 target_link_libraries(gravid gravid-codec gravid-cpueffects gravid-opencl gravid-visual ${OPENCL_LIBRARIES} ${FFMPEG_LIBRARIES} "glut")
