@@ -1,27 +1,38 @@
 const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE |	CLK_ADDRESS_CLAMP_TO_EDGE | CLK_FILTER_NEAREST;
 
 /*__kernel void echoeffect(__read_only image3d_t src_img, __global uchar4* dst_img){*/
-__kernel void echoeffect(__read_only image3d_t src_img, __global uchar4* dst_img, __global int gRandomness, __global int gOpacity){
+__kernel void echoeffect(__read_only image3d_t src_img, __write_only image2d_t dst_img, __global int gLoopCnt ){
 
-/* paramter Wievielter Aufruf (Frame) das ist, daraus berechnen wieviel Frames es davor überhaupt gibt*/
+/* paramter Wievielter Aufruf (Frame) das ist, daraus berechnen wieviel Frames es davor überhaupt gibt */ 
+/* todo: variable anzhal an vergangenheitsframes beachten */
+
 
 	__private size_t x = get_global_id(0);
 	__private size_t y = get_global_id(1);
-	__local int randomness;
-	__local int opacity;
+	__local int randomness = 10;
+	__local int opacity = 102;
+	__local int loopCnt;
+	__local int4 frames_cnt = get_image_dim( src_img );
+
 
 	/* opacity of the overlayed frames, 102 = 40%*/
 	/* fetch to shared memory with barrier() */
 	if ( get_local_id( 0 ) & get_global_id(1) == 0 ) {
-		randomness  = gRandomness;
-		opacity = gOpacity;
+		loopCnt = gLoopCnt;
+		/*randomness  = gRandomness;
+		opacity = gOpacity;*/
 	}
+	/* synchronize threads */
+	barrier(CLK_LOCAL_MEM_FENCE);
 
-	/* random generator */
-	/* fetch randomness from shared memory */
+	/* appoint the starting memory address */
+	int start_address = loopCnt % frames_cnt;
+	if (start_address == 0) {
+		start_address =  frames_cnt-1;
+	} else {
+		start_address = start_address-1;
+	}
 	
-
-
 	int4 act_pix;
 	act_pix = read_imageui( src_img, sampler, (int4)(x,y,5,0) );
 	uchar red = act_pix.x;
@@ -30,8 +41,8 @@ __kernel void echoeffect(__read_only image3d_t src_img, __global uchar4* dst_img
 
 	/* overlaying with "manual loop unrolling" */
 	/* overlay second frame */
-	for (int i = 0; i<=4; i++) {
-
+	for (int n = start_address; n<= (start_address + frames_cnt); n++) {
+		int i = n % (start_address + frames_cnt);
 		/* funny washing effect
 		int random = red % (randomness * 2);
 		random = ( randomness - random );
@@ -39,13 +50,12 @@ __kernel void echoeffect(__read_only image3d_t src_img, __global uchar4* dst_img
 		int hor_translation = random;
 		*/
 
-		/* random perturbatrion of the single frames*/
-		int4 start_pix = read_imageui( src_img, sampler, (int4)(0,0,i,0) );
+		/* pseudo-random perturbation of the single frames*/
+		int4 start_pix = read_imageui( src_img, sampler, (int4)(i,i,i,0) );
 		int random = start_pix.x % (randomness * 2);
 		random = ( randomness - random );
 		int vert_translation = random;
 		int hor_translation = random;
-
 
 		act_pix = read_imageui( src_img, sampler, (int4)(x + vert_translation,y + hor_translation,i,0) );
 		red = (uchar)( ( ( opacity * act_pix.x ) + (( 255 - opacity ) * red ) )/ 255 );
@@ -53,17 +63,6 @@ __kernel void echoeffect(__read_only image3d_t src_img, __global uchar4* dst_img
 		blue = (uchar)( ( ( opacity * act_pix.z ) + (( 255 - opacity ) * blue ) ) / 255 );
 	}
 
-	/* make sure, that the output-frame is in the right position */
-/*	act_pix = read_imageui( src_img, sampler, (int4)(x, y, 5, 0) );
-	red = (uchar)( ( ( opacity * act_pix.x ) + (( 255 - opacity ) * red ) )/ 255 );
-	yellow = (uchar)( ( ( opacity * act_pix.y ) + (( 255 - opacity ) * yellow ) ) / 255 );
-	blue = (uchar)( ( ( opacity * act_pix.z ) + (( 255 - opacity ) * blue ) ) / 255 );
-*/
-	uchar4 tmp;
-	tmp.x = red;
-	tmp.y = yellow;
-	tmp.z = blue;
-
 	int4 dim = get_image_dim(src_img);
-	dst_img[y * dim.x + x] = tmp;
+	write_imageui( dst_img, (int2)(x,y), (int4)( red, yellow, blue, 0 ) );
 }
