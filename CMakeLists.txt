@@ -54,7 +54,7 @@ include_directories(include)
 #add_subdirectory(/home/kama06/include)
 add_library(gravid-codec SHARED src/codec/videoReader.cpp src/codec/videoWriter.cpp)
 add_library(gravid-cpueffects SHARED  src/cpu_effects/edgeDetection.cpp src/cpu_effects/colorFilter.cpp src/cpu_effects/echoEffect.cpp )
-add_library(gravid-opencl SHARED src/opencl/openCLProgram.cpp src/opencl/kernel.cpp src/opencl/memoryManager.cpp src/opencl/kernelExecutor.cpp src/opencl/doubleBuffer.cpp)
+add_library(gravid-opencl SHARED src/opencl/openCLProgram.cpp src/opencl/kernel.cpp src/opencl/memoryManager.cpp src/opencl/kernelExecutor.cpp src/opencl/doubleBuffer.cpp src/opencl/videoPipeline.cpp)
 add_library(gravid-visual SHARED  src/visual/writePPM.cpp src/visual/glDisplayer.cpp)
 
 add_executable(gravid src/main.cpp src/common.cpp src/threads.cpp src/cmdLineParser.cpp)

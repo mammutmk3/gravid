@@ -50,8 +50,6 @@ void EdgeDetection::sobelOperator(RGBA* pixarray, RGBA* output_pic, int width, i
     for (int i=0; i<height; i++) {
         for (int n=0; n<width; n++) {
 
-            int sum=0;
-            int sum_c=0;
             int sum_x=0;
             int sum_y=0;
 

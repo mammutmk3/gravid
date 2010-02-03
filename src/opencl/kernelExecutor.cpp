@@ -55,7 +55,7 @@ void KernelExecutor::errorHappened(const char* error){
 }
 
 void KernelExecutor::executeAll(MemoryManager &memMan){
-	cl_event* waitEvent;
+
 	for(size_t i=0;i<this->kernels.size();i++){
 		Kernel *k = this->kernels[i];
 		// all even launches start from the original memory
@@ -79,7 +79,7 @@ void KernelExecutor::executeAll(MemoryManager &memMan){
 		// start the kernel as soon as the copy process is finished
 		this->errorCode = clEnqueueNDRangeKernel(this->cmdQ, k->getNativeKernel(),
 													2, NULL, k->getGlobalDim(), k->getLocalDim(),
-													0, NULL, waitEvent);
+													0, NULL, &this->lastKernel);
 		if(CL_SUCCESS != this->errorCode)
 			this->errorHappened("kernel couldn't be enqueued");
 	}

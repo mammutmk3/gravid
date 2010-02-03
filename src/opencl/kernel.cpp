@@ -37,7 +37,7 @@ Kernel::~Kernel(){
 void Kernel::guessWorkgroupSize(){
 	// holds the currently determined maximum workgroup size
 	unsigned short size;
-	for(char i=0;i<2;i++){
+	for(int i=0;i<2;i++){
 		size = MAX_WORKGROUP_SIZE;
 		for(char j=1;j<=9;j++){
 			if(0 == this->global[i] % size){

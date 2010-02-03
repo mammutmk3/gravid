@@ -40,7 +40,7 @@ int main(int argc, char** argv){
 		VideoWriter writer(cmdPars.getOutputFile(), vidInf);
 
 		if(cmdPars.hasVideoEffect()){
-			// TODO video effects do yet have to be supported
+			// TODO video effects do yet have to be supportedstd::cout << "noch tiefer der schleife" << std::endl;
 			throw std::logic_error("video effects are not supported yet");
 		}
 		else{
@@ -60,12 +60,14 @@ int main(int argc, char** argv){
 			// initialize the thread context
 			GRAVID::initThreadVariables(&reader, &writer ,memMan,kExec, vidInf.width, vidInf.height);
 			while(reader.hasNextFrame()){
-				// make sure no kernel is running and that the decoder has finished it's last frame
-				pthread_join(decodeThread,NULL);
-				memMan->copyToDevice(kExec->getLastKernelEvent());
+				if(!firstLaunch){
+					// make sure no kernel is running and that the decoder has finished it's last frame
+					pthread_join(decodeThread,NULL);
+					memMan->copyToDevice(kExec->getLastKernelEvent());
+				}
 				// decode a frame
 				pthread_create(&decodeThread,NULL,GRAVID::decode_Frame, (void*)memMan->getFrame_forDecoder());
-				// the pipelines has to be filled first
+				// only launch e kernel if he has an image to process
 				if(!firstLaunch){
 					kExec->executeAll(*memMan);
 					// wait for the encoder

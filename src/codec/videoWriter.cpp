@@ -14,6 +14,8 @@ using namespace GRAVID;
 using std::logic_error;
 
 #define STREAM_PIX_FMT PIX_FMT_YUV420P // default pix_fmt for the output stream
+#define MUX_PRELOAD 0.5
+#define MUX_MAX_DELAY 0.7
 
 #define INT64_C
 
@@ -55,7 +57,8 @@ VideoWriter::VideoWriter(const char* filename, const VideoInfo vInfo) throw(std:
     if (av_set_parameters(this->oc, NULL) < 0)
     	this->errorHappened("Invalid output format parameters");
 
-    dump_format(this->oc, 0, filename, 1);
+    this->oc->preload = (int)(MUX_PRELOAD*AV_TIME_BASE);
+    this->oc->max_delay = (int)(MUX_MAX_DELAY*AV_TIME_BASE);
 
     // now that all the parameters are set, we can open the audio and
     // video codecs and allocate the necessary encode buffers
@@ -128,7 +131,7 @@ AVStream* VideoWriter::add_video_stream(enum CodecID codec_id){
     c->codec_type = CODEC_TYPE_VIDEO;
 
     // put sample parameters
-    c->bit_rate = 400000;
+    c->bit_rate = 10000000;
     // resolution must be a multiple of two
     c->width = this->vInfo.width;
     c->height = this->vInfo.height;
