@@ -31,10 +31,44 @@ void FadingEffects::fadeAdditive(RGBA* inpic0, RGBA* inpic1, RGBA* output_pic, i
 		tmp.r = red;
 		tmp.g = green;
 		tmp.b = blue;
-//		tmp.r = act_pix1.r;
-//		tmp.g = act_pix1.g;
-//		tmp.b = act_pix1.b;
 		output_pic[address] = tmp;
+        }
+    }
+}
+
+
+void FadingEffects::fadeBlind(RGBA* inpic0, RGBA* inpic1, RGBA* output_pic, int width, int height, float act_percent) {
+
+	// calculate opacity
+	int opacity = (int)255*act_percent;
+// 	std::cout << opacity << std::endl;
+	
+    for (int i=0; i<height; i++) {
+        for (int n=0; n<width; n++) {
+
+		//Adresse berechnen
+		int address = (n+width*i);
+
+		RGBA act_pix1 = inpic0[address];
+		RGBA act_pix2 = inpic1[address];
+		
+		/* calculate equidistant distance*/
+		/* how much blinds */
+		int blinds = 7;
+		int distance = width / blinds;
+		
+		/* entfernung berechnen wie weit das erste video noch gehen soll */
+		/*if n zwischen abstand und grenze der jalousie, dann nimm video 1, else video2
+		
+		unsigned char red = 
+		unsigned char green = 
+		unsigned char blue =
+
+		RGBA tmp;
+		tmp.r = red;
+		tmp.g = green;
+		tmp.b = blue;
+		output_pic[address] = tmp;*/
         }
     }
 }
