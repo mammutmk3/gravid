@@ -42,7 +42,7 @@ namespace GRAVID{
 		/**
 		 * determines whether the user wants to print the frames via OpenGL or encode the result to a new video file
 		 */
-		bool hasOutputFile(){return !this->shallEncode;}
+		bool hasOutputFile(){return this->shallEncode;}
 
 		const char* getOutputFile(){return this->outputFile.c_str();}
 

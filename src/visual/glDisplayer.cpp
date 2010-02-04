@@ -5,20 +5,19 @@
  *      Author: lars
  */
 
-#include "threads.h"
 #include "visual/glDisplayer.h"
+#include "types.h"
 
 #include "opencl/kernelExecutor.h"
 #include "opencl/memoryManager.h"
+#include "opencl/executionLogic.h"
+#include "opencl/videoPipeline.h"
 #include "codec/videoReader.h"
-#include "types.h"
+#include "opencl/kernel.h"
 
 #include <GL/glut.h>
 #include <CL/cl.h>
 #include <iostream>
-#include <pthread.h>
-
-#include "cpu_effects/colorFilter.h"
 
 using namespace GRAVID;
 
@@ -26,56 +25,54 @@ using namespace GRAVID;
 // so here come the global variables and functions...
 unsigned short gl_window_width;
 unsigned short gl_window_height;
-RGBA* gl_display_image;
 
 // the tool chain
 KernelExecutor *pKExec;
 VideoReader *pReader;
 MemoryManager *pMemMan;
 
-bool firstLaunch = true, secondLaunch = false, encoderStarted = false;
-pthread_t decodeThread, displayThread;
+// for video effects
+VideoPipeline *pVidPipe;
+Kernel *pKernel;
+cl_command_queue cmdQ;
+Video_Effect vidEffect;
 
-void draw(){
-	//decode first frame
+// render image effects
+void draw_image(){
+	static int pipe_empty_phase = 1;
+
 	if(pReader->hasNextFrame()){
-		// make sure no kernel is running and that the decoder has finished it's last frame
-		pthread_join(decodeThread,NULL);
-		pMemMan->copyToDevice(pKExec->getLastKernelEvent());
-		// decode a frame
-		pthread_create(&decodeThread,NULL,GRAVID::decode_Frame, (void*)pMemMan->getFrame_forDecoder());
-		// the pipelines has to be filled first
-		if(!firstLaunch){
-			pKExec->executeAll(*pMemMan);
-			// wait for the encoder
-			if(encoderStarted)
-				pthread_join(displayThread,NULL);
-			pMemMan->copyFromDevice(pKExec->getLastKernelEvent());
-			if(!secondLaunch){
-				// encode a frame
-				pthread_create(&displayThread,NULL,GRAVID::encode_Frame, (void*)pMemMan->getFrame_forEncoder());
-				//glDrawPixels(720, 576, GL_RGBA, GL_UNSIGNED_BYTE, pMemMan->getFrame_forEncoder());
-				encoderStarted = true;
-			}
-			else
-				secondLaunch = false;
-		}
-		else{
-			firstLaunch = false;
-			secondLaunch = true;
-		}
 		glutPostRedisplay();
 	}
+	else if(pipe_empty_phase <=4){
+		// nessecary to empty the pipeline
+		pipe_empty_phase++;
+		glutPostRedisplay();
+	}
+	GRAVID::exec_img_effects(pReader, pMemMan, pKExec);
+	glDrawPixels(gl_window_width, gl_window_height, GL_RGBA, GL_UNSIGNED_BYTE, pMemMan->getFrame_forEncoder());
+	glFlush ();
+}
+
+// render video effects
+void draw_video(){
+	if(pReader->hasNextFrame()){
+		if(IMG_OVRLAY == vidEffect){
+			GRAVID::exec_img_overlay(pVidPipe, pKernel, pReader,cmdQ);
+			glDrawPixels(gl_window_width, gl_window_height, GL_RGBA, GL_UNSIGNED_BYTE,pVidPipe->getResultFrame());
+			glutPostRedisplay();
+		}
+		else{
+		}
+	}
+	glFlush();
 }
 
 void GRAVID::glDisplay(int argc, char** argv,
-				const unsigned short windowWidth, const unsigned short windowHeight,
-				RGBA* displayImage){
-
+						const size_t windowWidth, const size_t windowHeight, RenderMode rMode){
 	// save the width and height
 	gl_window_width = windowWidth;
 	gl_window_height = windowHeight;
-	gl_display_image = displayImage;
 
 	// initialize GLUT
 	glutInit(&argc, argv);
@@ -87,22 +84,35 @@ void GRAVID::glDisplay(int argc, char** argv,
 	glutCreateWindow("GRAVID video editor");
 
 	// register Callback functions
-	glutDisplayFunc(draw);
+	if(IMAGE == rMode){
+		glutDisplayFunc(draw_image);
+	}
+	else{
+		glutDisplayFunc(draw_video);
+	}
 
 	// default initialization
 	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glPixelZoom( 1.0, -1.0 );
 	glRasterPos2d(-1,1);
 
-	//decode first frame
-	if(pReader->hasNextFrame())
-		pthread_create(&decodeThread,NULL,GRAVID::decode_Frame, (void*)pMemMan->getFrame_forDecoder());
 	// start the gl-Loop
 	glutMainLoop();
 }
 
-void GRAVID::setToolChain(KernelExecutor &kExec, VideoReader &reader, MemoryManager &memMan){
-	pKExec = &kExec;
-	pReader = &reader;
-	pMemMan = &memMan;
+void GRAVID::initOpenGL_image(KernelExecutor *pKExec_local, VideoReader *pReader_local,
+								MemoryManager *pMemMan_local){
+	pKExec = pKExec_local;
+	pReader = pReader_local;
+	pMemMan = pMemMan_local;
+}
+
+void GRAVID::initOpenGL_video(VideoPipeline *pVidPipe_local, Kernel *pKernel_local, VideoReader *pReader_local,
+						cl_command_queue cmdQ_local, Video_Effect vidEffect_local){
+	pVidPipe = pVidPipe_local;
+	pReader = pReader_local;
+	pKernel = pKernel_local;
+	cmdQ = cmdQ_local;
+
+	vidEffect = vidEffect_local;
 }

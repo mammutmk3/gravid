@@ -14,6 +14,11 @@ extern "C" {
 
 namespace GRAVID{
 
+	enum RenderMode{
+		IMAGE,
+		VIDEO
+	};
+
 	enum Image_Effect{
 		GRAY_FILTER,
 		SEPIA_FILTER,
@@ -23,8 +28,7 @@ namespace GRAVID{
 
 	enum Video_Effect{
 		IMG_OVRLAY,
-		CAM_STAB,
-		NONE
+		CAM_STAB
 	};
 
 	/**

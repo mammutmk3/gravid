@@ -131,7 +131,7 @@ AVStream* VideoWriter::add_video_stream(enum CodecID codec_id){
     c->codec_type = CODEC_TYPE_VIDEO;
 
     // put sample parameters
-    c->bit_rate = 10000000;
+    c->bit_rate = 5000000;
     // resolution must be a multiple of two
     c->width = this->vInfo.width;
     c->height = this->vInfo.height;

@@ -24,8 +24,8 @@ namespace GRAVID{
 
 		// fixed parameter determining the max number of elements in the fifo buffer
 		unsigned int fifo_length;
-		// the index of the element within the fifo that is beeing considered as the first element
-		unsigned int first_index;
+		// the position of the next frame that is beeing copied in the sequence of alle frames
+		unsigned int frame_pos;
 		// mostly for the beginning of filling the fifo: the number of images yet stored in the fifo
 		unsigned int nb_imgs_in_fifo;
 		/**
@@ -52,8 +52,8 @@ namespace GRAVID{
 		/*
 		 * the events that can be used to keep track of the copy states
 		 */
-		cl_event copyToDevice;
-		cl_event copyFromDevice;
+		cl_event copyToDevice_event;
+		cl_event copyFromDevice_event;
 
 	public:
 		/**
@@ -75,7 +75,7 @@ namespace GRAVID{
 		 *
 		 * @return the OpenCL event that indicates when this copy process has finished
 		 */
-		cl_event copyToDevice_event(cl_event last_kernel_launch);
+		cl_event copyToDevice(cl_event last_kernel_launch);
 
 		/**
 		 * copies the last result frame from the result buffer on the device to the host
@@ -85,7 +85,7 @@ namespace GRAVID{
 		 *
 		 * @return the OpenCL event that indicates when this copy process has finished
 		 */
-		cl_event copyFromDevice_event(cl_event last_kernel_launch);
+		void copyFromDevice(cl_event last_kernel_launch);
 
 		/**
 		 * returns the number of elements, that the fifo can take at the maximum
@@ -93,15 +93,28 @@ namespace GRAVID{
 		unsigned int getFifoLength(){return this->fifo_length;}
 
 		/**
-		 * returns the index of the element in the fifo, that is considered to be the first element now
+		 * returns the position of the next frame in line within the sequence of all frames
 		 */
-		unsigned int getFirstIndex(){return this->first_index;}
+		unsigned int getFramePos(){return this->frame_pos;}
 
 		/**
 		 * returns the number of images, that are currently placed within the fifo buffer
 		 * this number can be lower at the beginning when the fifo is not totally filled yet
 		 */
 		unsigned int getNBImgsInFifo(){return this->nb_imgs_in_fifo;}
+
+		/**
+		 * returns the pointer to the memory area where the decoder can write the iamge to
+		 */
+		RGBA* getFrame_ForDecoder(){return this->hostPixelData_in;}
+
+		/**
+		 * returns the address of the memory area containing the result frame
+		 */
+		RGBA* getResultFrame(){return this->hostPixelData_out;}
+
+		cl_mem getInputImage_Device(){return this->devImage3D_in;}
+		cl_mem getOutputImage_Device(){return this->devImage2D_out;}
 	};
 }
 
