@@ -15,7 +15,7 @@ VideoPipeline::VideoPipeline(cl_context ctx, cl_command_queue cmdQ, const unsign
 	this->cmdQ = cmdQ;
 	this->ctx = ctx;
 	this->fifo_length = fifo_length;
-	this->image_width = iamge_width;
+	this->image_width = image_width;
 	this->image_height = image_height;
 	this->devImage2D_out = NULL;
 	this->devImage3D_in = NULL;

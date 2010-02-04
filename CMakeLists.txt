@@ -35,25 +35,10 @@ SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3 -fno-inline")
 
 include_directories(src)
 include_directories(include)
-#include_directories(/home/kama06/include/)
-#include_directories(/home/kama06/include/libavcodec)
-#include_directories(/home/kama06/include/libavformat)
-#include_directories(/home/kama06/include/libavswscale)
-#include_directories(/home/kama06/include/libavutil)
-
-#link_directories(/home/kama06/include)
-
-#find_library(LIBAVCODEC "/home/kama06/include/libavcodec/avcodec.h")
 
 # build a library
-#add_subdirectory(src/codec)
-#add_subdirectory(src/cpu_effects)
-#add_subdirectory(src/opencl)
-#add_subdirectory(src/visual)
-#add_subdirectory(include)
-#add_subdirectory(/home/kama06/include)
 add_library(gravid-codec SHARED src/codec/videoReader.cpp src/codec/videoWriter.cpp)
-add_library(gravid-cpueffects SHARED  src/cpu_effects/edgeDetection.cpp src/cpu_effects/colorFilter.cpp src/cpu_effects/echoEffect.cpp )
+add_library(gravid-cpueffects SHARED  src/cpu_effects/edgeDetection.cpp src/cpu_effects/colorFilter.cpp src/cpu_effects/echoEffect.cpp src/cpu_effects/FadingEffects.cpp)
 add_library(gravid-opencl SHARED src/opencl/openCLProgram.cpp src/opencl/kernel.cpp src/opencl/memoryManager.cpp src/opencl/kernelExecutor.cpp src/opencl/doubleBuffer.cpp src/opencl/videoPipeline.cpp)
 add_library(gravid-visual SHARED  src/visual/writePPM.cpp src/visual/glDisplayer.cpp)
 

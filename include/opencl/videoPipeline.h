@@ -75,7 +75,7 @@ namespace GRAVID{
 		 *
 		 * @return the OpenCL event that indicates when this copy process has finished
 		 */
-		cl_event copyToDevice(cl_event last_kernel_launch);
+		cl_event copyToDevice_event(cl_event last_kernel_launch);
 
 		/**
 		 * copies the last result frame from the result buffer on the device to the host
@@ -85,7 +85,7 @@ namespace GRAVID{
 		 *
 		 * @return the OpenCL event that indicates when this copy process has finished
 		 */
-		cl_event copyFromDevice(cl_event last_kernel_launch);
+		cl_event copyFromDevice_event(cl_event last_kernel_launch);
 
 		/**
 		 * returns the number of elements, that the fifo can take at the maximum
