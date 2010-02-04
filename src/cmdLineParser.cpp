@@ -13,7 +13,7 @@
 // defines the current number of valid arguments, excluding program path
 #define CMD_LENGTH 3
 
-#define CMD_USAGE "gravid <{image_filter} | video_filter> input_video output_video"
+#define CMD_USAGE "gravid <{image_filter} | video_filter> input_video < --display | output_video>"
 #define CMD_IMAGE "g : gray filter\ns : sepia filter\ne : edge detection\nb : gaussian blur"
 #define CMD_VIDEO "o : overlay\nc : camera stabilisation"
 #define CMD_EXAMPLE "./gravid gb video1.mpg video2.mpeg"
@@ -67,8 +67,14 @@ CmdLineParser::CmdLineParser(const int argc, char** argv){
 	this->inputFile = this->args[1];
 
 	// set the outputfile, if desired
-	this->shallEncode = true;
-	this->outputFile = this->args[2];
+	if(0 == this->args[2].compare("--display")){
+		this->shallEncode = false;
+	}
+	else{
+		this->shallEncode = true;
+		this->outputFile = this->args[2];
+	}
+
 }
 
 CmdLineParser::~CmdLineParser(){
@@ -115,7 +121,5 @@ void CmdLineParser::parseVideoEffect(){
 	switch(this->args[0][0]){
 	case 'o' : this->vidEffect = IMG_OVRLAY; break;
 	case 'c' : this->vidEffect = CAM_STAB; break;
-	// this case should actually never occur
-	default : this->vidEffect = NONE; return;
 	}
 }

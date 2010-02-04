@@ -9,8 +9,8 @@
 #include "types.h"
 
 #include <pthread.h>
-#include <CL/cl.h>
-#include <stdio.h>
+//#include <CL/cl.h>
+//#include <stdio.h>
 #include <GL/glut.h>
 
 #include "codec/videoReader.h"
@@ -18,7 +18,7 @@
 #include "opencl/kernelExecutor.h"
 #include "opencl/memoryManager.h"
 
-#include "visual/writePPM.h"
+//#include "visual/writePPM.h"
 
 using namespace GRAVID;
 
@@ -40,8 +40,8 @@ void GRAVID::initThreadVariables(VideoReader *pReader_local, VideoWriter *pWrite
 	pMemMan_thread = pMemMan_local;
 	pKExec_thread = pKExec_local;
 
-	width_thread = width;
-	height_thread = height;
+	//width_thread = width;
+	// height_thread = height;
 }
 
 void* GRAVID::decode_Frame(void* RGBA_Frame){
@@ -51,8 +51,8 @@ void* GRAVID::decode_Frame(void* RGBA_Frame){
 
 void* GRAVID::encode_Frame(void* RGBA_Frame){
 	pWriter_thread->writeMultiMedFrame((RGBA*) RGBA_Frame);
-	/*char filename[50];
-	sprintf(filename,"pictures/pic%i.ppm",i_thread);
-	i_thread++;
-	GRAVID::writePPM((RGBA*)RGBA_Frame,filename,720,576);*/
+}
+
+void* GRAVID::display_Frame(void* RGBA_Frame){
+
 }

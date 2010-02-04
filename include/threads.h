@@ -29,9 +29,16 @@ namespace GRAVID{
 	/**
 	 * thread function, that handles the output side of the pipeline
 	 *
-	 * @param RGBA_Frame the address of the memory from where to write the frame
+	 * @param RGBA_Frame the address of the memory from where to read the frame
 	 */
 	void *encode_Frame(void* RGBA_Frame);
+
+	/**
+	 * thread function, that handles the output side of the pipeline
+	 *
+	 * @param RGBA_Frame the address of the memory from where to read the frame
+	 */
+	void* display_Frame(void* RGBA_Frame);
 }
 
 #endif /* THREADS_H_ */

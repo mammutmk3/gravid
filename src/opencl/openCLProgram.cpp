@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include <string>
 #include <fstream>
+#include <iostream>
 
 using namespace GRAVID;
 
@@ -64,6 +65,7 @@ OpenCLProgram::OpenCLProgram(const char* filename){
 
 void OpenCLProgram::errorHappened(const char* error){
 	this->errorMsg = error;
+	std::cerr << error << std::endl;
 	throw std::logic_error(errorMsg);
 }
 
