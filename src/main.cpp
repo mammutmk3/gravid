@@ -51,7 +51,7 @@ int main(int argc, char** argv){
 			vidPipe = new VideoPipeline(oclProgram->getContext(), oclProgram->getCommandQueue(), FIFO_LENGTH,vidInf.width, vidInf.height);
 			switch(cmdPars.getVideoEffect()){
 				case IMG_OVRLAY: {
-									pKernel = new Kernel(oclProgram->getProgram(), "echoeffect", vidInf.width, vidInf.height);
+									pKernel = new Kernel(oclProgram->getProgram(), "test3DImage", vidInf.width, vidInf.height);
 									if(cmdPars.hasOutputFile()){
 										// create an encoder
 										pVidWriter = new VideoWriter(cmdPars.getOutputFile(), vidInf);

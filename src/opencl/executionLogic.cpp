@@ -27,10 +27,9 @@ void GRAVID::exec_img_overlay(VideoPipeline *pVidPipe, Kernel *pKernel, VideoRea
 		// init the kernel
 		pKernel->setKernelArgument(0,pVidPipe->getInputImage_Device());
 		pKernel->setKernelArgument(1,pVidPipe->getOutputImage_Device());
-		pKernel->setKernelArgument(2,pVidPipe->getFramePos());
 		init_done = true;
 	}
-
+	pKernel->setKernelArgument(2,(int)pVidPipe->getFramePos());
 	pReader->changeFrameBuffer(pVidPipe->getFrame_ForDecoder());
 	pReader->decodeNextFrame();
 

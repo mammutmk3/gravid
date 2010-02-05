@@ -68,20 +68,16 @@ __kernel void test3DImage(__read_only image3d_t src_img, __write_only image2d_t 
 	__private size_t x = get_global_id(0);
 	__private size_t y = get_global_id(1);
 	
-    __local int loopCnt;
-    __local int frames_cnt = get_image_dim( src_img ).z;
+    __local int start_index;
  
-    if ( 0 == get_local_id( 0 ) && 0 == get_global_id(1)){
-    	loopCnt = gLoopCnt;
+    if ( 0 == get_local_id( 0 ) && 0 == get_local_id(1)){
+    	__private int loop_cnt = gLoopCnt;
+    	start_index = loop_cnt % get_image_dim(src_img).z;
 	}
+	barrier(CLK_LOCAL_MEM_FENCE);
  
-   barrier(CLK_LOCAL_MEM_FENCE);
+	int4 act_pix;
+	act_pix = read_imageui( src_img, sampler, (int4)(x,y,start_index,0) );
  
- 
-  int start_index = loopCnt % frames_cnt;
- 
-  int4 act_pix;
-  act_pix = read_imageui( src_img, sampler, (int4)(x,y,start_index,0) );
- 
-  write_imageui( dst_img, (int2)(x,y), act_pix);
+	write_imageui( dst_img, (int2)(x,y), act_pix);
 }
