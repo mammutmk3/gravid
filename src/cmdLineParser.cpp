@@ -15,10 +15,10 @@
 
 #define CMD_USAGE "gravid <{image_filter} | video_filter> input_video < --display | output_video>"
 #define CMD_IMAGE "g : gray filter\ns : sepia filter\ne : edge detection\nb : gaussian blur"
-#define CMD_VIDEO "o : overlay\nc : camera stabilisation"
+#define CMD_VIDEO "o : ghost\nq : blur\nc : camera stabilisation"
 #define CMD_EXAMPLE "./gravid gb video1.mpg video2.mpeg"
 
-#define VALID_FLTR_FLAGS "gseboc"
+#define VALID_FLTR_FLAGS "gseboqc"
 
 using namespace GRAVID;
 
@@ -119,7 +119,8 @@ void CmdLineParser::parseImageEffects(){
 
 void CmdLineParser::parseVideoEffect(){
 	switch(this->args[0][0]){
-	case 'o' : this->vidEffect = IMG_OVRLAY; break;
+	case 'o' : this->vidEffect = GHOST; break;
+	case 'q' : this->vidEffect = ECHO_BLUR; break;
 	case 'c' : this->vidEffect = CAM_STAB; break;
 	}
 }

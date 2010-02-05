@@ -27,7 +27,8 @@ namespace GRAVID{
 	};
 
 	enum Video_Effect{
-		IMG_OVRLAY,
+		GHOST,
+		ECHO_BLUR,
 		CAM_STAB
 	};
 

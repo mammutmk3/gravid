@@ -57,7 +57,7 @@ void draw_image(){
 // render video effects
 void draw_video(){
 	if(pReader->hasNextFrame()){
-		if(IMG_OVRLAY == vidEffect){
+		if(GHOST == vidEffect || ECHO_BLUR == vidEffect){
 			GRAVID::exec_img_overlay(pVidPipe, pKernel, pReader,cmdQ);
 			glDrawPixels(gl_window_width, gl_window_height, GL_RGBA, GL_UNSIGNED_BYTE,pVidPipe->getResultFrame());
 			glutPostRedisplay();

@@ -50,8 +50,8 @@ int main(int argc, char** argv){
 			// create the pipeline to execute a video effect
 			vidPipe = new VideoPipeline(oclProgram->getContext(), oclProgram->getCommandQueue(), FIFO_LENGTH,vidInf.width, vidInf.height);
 			switch(cmdPars.getVideoEffect()){
-				case IMG_OVRLAY: {
-									pKernel = new Kernel(oclProgram->getProgram(), "echoeffect", vidInf.width, vidInf.height);
+				case GHOST: {
+									pKernel = new Kernel(oclProgram->getProgram(), "ghosteffect", vidInf.width, vidInf.height);
 									if(cmdPars.hasOutputFile()){
 										// create an encoder
 										pVidWriter = new VideoWriter(cmdPars.getOutputFile(), vidInf);
@@ -62,10 +62,26 @@ int main(int argc, char** argv){
 										pVidWriter->finalizeVideo();
 									}
 									else{
-										initOpenGL_video(vidPipe, pKernel, &reader, oclProgram->getCommandQueue(),IMG_OVRLAY);
+										initOpenGL_video(vidPipe, pKernel, &reader, oclProgram->getCommandQueue(),GHOST);
 										glDisplay(argc, argv, vidInf.width, vidInf.height, VIDEO);
 									}
-									}break;
+									}break;									
+				case ECHO_BLUR:{
+									pKernel = new Kernel(oclProgram->getProgram(), "echoblureffect", vidInf.width, vidInf.height);
+									if(cmdPars.hasOutputFile()){
+										// create an encoder
+										pVidWriter = new VideoWriter(cmdPars.getOutputFile(), vidInf);
+										while(reader.hasNextFrame()){
+											GRAVID::exec_img_overlay(vidPipe,pKernel,&reader,oclProgram->getCommandQueue());
+											pVidWriter->writeMultiMedFrame(vidPipe->getResultFrame());
+										}
+										pVidWriter->finalizeVideo();
+									}
+									else{
+										initOpenGL_video(vidPipe, pKernel, &reader, oclProgram->getCommandQueue(),ECHO_BLUR);
+										glDisplay(argc, argv, vidInf.width, vidInf.height, VIDEO);
+									}
+									}break;									
 				case CAM_STAB : break;
 			}
 		}
