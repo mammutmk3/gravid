@@ -15,7 +15,7 @@ namespace GRAVID {
             
         }
         
-        void renderEcho( RGBA* inpic0, RGBA* inpic1,  RGBA* inpic2, RGBA* inpic3, RGBA* inpic4, RGBA* output_pic, int width, int height);
+        void renderEcho( std::vector<RGBA*> frames, RGBA* &output_pic, int width, int height, int loopCnt, int frames_cnt);
     };
     
 }

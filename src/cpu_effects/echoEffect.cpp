@@ -10,58 +10,76 @@
 using namespace GRAVID;
 
 
-void EchoEffect::renderEcho(
-	RGBA* inpic0, 
-	RGBA* inpic1,  
-	RGBA* inpic2, 
-	RGBA* inpic3,
-	RGBA* inpic4, 
-	RGBA* output_pic, 
-	int width, 
-	int height) 
-{
+void EchoEffect::renderEcho( std::vector<RGBA*> frames, RGBA* &output_pic_param, int width, int height, int loopCnt, int frames_cnt) {
+	/* max random aberration of the overlayed frames */
+	int randomness = 30;
+	/* opacity of the overlayed frames, 102 = 40%*/
+	int opacity = 102;
+	int start_address = loopCnt;
+	//std::cout << "loops: "<< loopCnt<< " frames" << frames_cnt << std::endl;
+	start_address = loopCnt % frames_cnt;
+	//std::cout << "= startaddress: "<< start_address  << std::endl;
+	
+	RGBA* start_pix = frames[start_address];
+	RGBA* output_pic = frames[start_address];
+		
+	for (int n = 1; n<(frames_cnt); n++) {
+		/* get background frames in the right order */
+		int i = (start_address-n);
 
-    for (int i=0; i<height; i++) {
-        for (int n=0; n<width; n++) {
+		if ( i<0)
+			i = frames_cnt + i;
+		//std::cout << i << " = start: " << start_address << " - n: " << n << std::endl;		
+		
+		RGBA* act_pix = frames[i];
+		
+		int random =  output_pic[i].r % (randomness * 2);
+		int vert_translation = (randomness - random);
+		random = output_pic[i].g % (randomness * 2);
+		int hor_translation = ( randomness - random);
+		
+		//std::cout << "vert: " << vert_translation << std::endl;
+		//std::cout << "hor: " << hor_translation << std::endl;
 
-		//Adresse berechnen
-		int address = (n+width*i);
-		int opacity = 102;
+		for (int h=0; h<height; h++) {
+			for (int w=0; w<width; w++) {
 
-		// Debug:
-// 		if ( inpic1[address].r != inpic0[address].r) {
-// 			printf("r0: %d, r1: %d \n", inpic1[address].r, inpic0[address].r);
-// 			printf("r0: %d, r1: %d \n", inpic1[address].g, inpic0[address].g);
-// 			printf("r0: %d, r1: %d \n", inpic1[address].b, inpic0[address].b);
-// 		}
+				//Adresse berechnen
+				int address = (w+width*h);
+				
+				int perturbation = address;
+				int hor_address = w + ( hor_translation );
+				if ( hor_address < 0 )
+					perturbation = address + hor_translation + abs(hor_address);
+				if ( hor_address > width )
+					perturbation = address + hor_translation + ( w - hor_translation );
 
-		// Wert fuer Rot berechnen
-		unsigned char rot = (unsigned char)( ( ( opacity * inpic1[address].r ) + (( 255 - opacity ) * inpic0[address].r ) )/ 255 );
-		rot = (unsigned char)((( opacity * inpic2[address].r ) + (( 255 - opacity ) * rot )) / 255);
-		rot = (unsigned char)((( opacity * inpic3[address].r ) + (( 255 - opacity ) * rot )) / 255);
-		rot = (unsigned char)((( opacity * inpic4[address].r ) + (( 255 - opacity ) * rot )) / 255);
+				int vert_address = h + (vert_translation);
+				if ( vert_address < 0 )
+					perturbation = perturbation - ( h * width);
+				if ( vert_address > height )
+					perturbation = (width * height - (perturbation%width));
+				
+				RGBA act_pix_val = act_pix[address];
+				RGBA start_pix_val =  start_pix[address];
 
-		// Wert fuer Gelb berechnen
-		unsigned char gelb = (unsigned char)( ( ( opacity * inpic1[address].g ) + (( 255 - opacity ) * inpic0[address].g ) ) / 255 );
-		gelb = (unsigned char)((( opacity * inpic2[address].g ) + (( 255 - opacity ) * gelb )) / 255);
-		gelb = (unsigned char)((( opacity * inpic3[address].g ) + (( 255 - opacity ) * gelb )) / 255);
-		gelb = (unsigned char)((( opacity * inpic4[address].g ) + (( 255 - opacity ) * gelb )) / 255);
-
-		// Wert fuer Blau berechnen
-		unsigned char blau = (unsigned char)( ( ( opacity * inpic1[address].b ) + (( 255 - opacity ) * inpic0[address].b ) ) / 255 );
-		blau = (unsigned char)((( opacity * inpic2[address].b ) + (( 255 - opacity ) * blau )) / 255);
-		blau = (unsigned char)((( opacity * inpic3[address].b ) + (( 255 - opacity ) * blau )) / 255);
-		blau = (unsigned char)((( opacity * inpic4[address].b ) + (( 255 - opacity ) * blau )) / 255);
-
-		//zurueckschreiben(unsigned char)
-		output_pic[address].r = rot; 
-		output_pic[address].g = gelb;
-		output_pic[address].b = blau;
-
-/*		output_pic[address].r = (unsigned char)inpic4[address].r; 
-		output_pic[address].g = (unsigned char)inpic4[address].g;
-		output_pic[address].b = (unsigned char)inpic4[address].b;
-*/		
+				unsigned char r = ( ( ( opacity * act_pix_val.r ) + (( 255 - opacity ) * output_pic[perturbation].r) ) / 255 );
+				unsigned char g = ( ( ( opacity * act_pix_val.g ) + (( 255 - opacity ) * output_pic[perturbation].g) ) / 255 );
+				unsigned char b = ( ( ( opacity * act_pix_val.b ) + (( 255 - opacity ) * output_pic[perturbation].b) ) / 255 );
+				output_pic[address].r = r;
+				output_pic[address].g = g;
+				output_pic[address].b = b;
+			}
+		}
+		/* and overlaying once again, for better visibility */
+		for (int h=0; h<height; h++) {
+			for (int w=0; w<width; w++) {
+				int address = (w+width*h);
+				output_pic[address].r = ( ( ( 75 * start_pix[address].r ) + (( 255 - 75 ) * output_pic[address].r) ) / 255 );
+				output_pic[address].g = ( ( ( 75 * start_pix[address].g ) + (( 255 - 75 ) * output_pic[address].g) ) / 255 );
+				output_pic[address].b = ( ( ( 75 * start_pix[address].b ) + (( 255 - 75 ) * output_pic[address].b) ) / 255 );
+			}
+		}
+		output_pic_param = output_pic;
 	}
-    }
 }
