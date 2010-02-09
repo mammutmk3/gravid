@@ -19,6 +19,8 @@
 #include <CL/cl.h>
 #include <iostream>
 
+#include <sys/time.h>
+
 using namespace GRAVID;
 
 // i really hate doing that, but glut doesn't allow OOP
@@ -37,6 +39,31 @@ Kernel *pKernel;
 cl_command_queue cmdQ;
 Video_Effect vidEffect;
 
+// to check, how much time elapsed since rendering the last frame
+timeval last_time;
+
+// to check, if the necessary waiting-time for fps is reached, so we can draw the next frame
+bool fps_ok() {
+	timeval cur_time;
+	gettimeofday( &cur_time, NULL);
+	
+	VideoInfo vidInf = pReader->getVideoInfo();
+	
+	long int framerate = ( vidInf.frame_rate.num / vidInf.frame_rate.den ) * 1000;
+	long int elapsed_time= abs( cur_time.tv_usec - last_time.tv_usec );
+	if ( cur_time.tv_sec > last_time.tv_sec )
+		elapsed_time += 1000000;
+	
+	if ( elapsed_time < framerate )
+		return false;
+	
+	std::cout << framerate << " "<<  elapsed_time << std::endl;
+	//std::cout << vidInf.frame_rate.den << std::endl;
+	gettimeofday( &last_time, NULL);
+	return true;
+}
+
+
 // render image effects
 void draw_image(){
 	static int pipe_empty_phase = 1;
@@ -51,6 +78,8 @@ void draw_image(){
 	}
 	GRAVID::exec_img_effects(pReader, pMemMan, pKExec);
 	glDrawPixels(gl_window_width, gl_window_height, GL_RGBA, GL_UNSIGNED_BYTE, pMemMan->getFrame_forEncoder());
+	// play video with correct timecode
+	while ( !fps_ok() ) { }
 	glFlush ();
 }
 
@@ -64,7 +93,9 @@ void draw_video(){
 		}
 		else{
 		}
-	}
+	} 
+	// play video with correct timecode
+	while ( !fps_ok() ) { }
 	glFlush();
 }
 

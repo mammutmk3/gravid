@@ -58,14 +58,17 @@ __kernel void ghosteffect(__read_only image3d_t src_img, __write_only image2d_t 
 		act_pix2 = read_imageui( src_img, sampler, (int4)(vert_translation+x,hor_translation+y,i,0) );
 		
 		/* transparency overlay */
-		out_pix.x = ( ( ( opacity * act_pix2.x ) + (( 255 - opacity ) * out_pix.x) ) / 255 );
+/*		out_pix.y = ( ( ( opacity * act_pix2.x ) + (( 255 - opacity ) * out_pix.x) ) / 255 );
 		out_pix.y = ( ( ( opacity * act_pix2.y ) + (( 255 - opacity ) * out_pix.y) ) / 255 );
-		out_pix.z = ( ( ( opacity * act_pix2.z ) + (( 255 - opacity ) * out_pix.z) ) / 255 );
+		out_pix.z = ( ( ( opacity * act_pix2.z ) + (( 255 - opacity ) * out_pix.z) ) / 255 );*/
+		out_pix.x = ( ( mul24( opacity, act_pix2.x ) +  mul24(( 255 - opacity ), out_pix.x) ) / 255 );
+		out_pix.y = ( ( mul24( opacity, act_pix2.y ) +  mul24(( 255 - opacity ), out_pix.y) ) / 255 );
+		out_pix.z = ( ( mul24( opacity, act_pix2.z ) +  mul24(( 255 - opacity ), out_pix.z) ) / 255 );
 	}
 	/* once again, the first frame, to make sure, it is visible enough */
-	out_pix.x = ( ( ( 75 * act_pix.x ) + (( 255 - 75 ) * out_pix.x) ) / 255 );
-	out_pix.y = ( ( ( 75 * act_pix.y ) + (( 255 - 75 ) * out_pix.y) ) / 255 );
-	out_pix.z = ( ( ( 75 * act_pix.z ) + (( 255 - 75) * out_pix.z) ) / 255 );
+	out_pix.x = ( ( mul24( 75, act_pix.x ) + mul24(( 255 - 75), out_pix.x) ) / 255 );
+	out_pix.y = ( ( mul24( 75, act_pix.y ) + mul24(( 255 - 75), out_pix.y) ) / 255 );
+	out_pix.z = ( ( mul24( 75, act_pix.z ) + mul24(( 255 - 75), out_pix.z) ) / 255 );
 
 	write_imageui( dst_img, (int2)(x,y), (int4)out_pix );
 }
@@ -123,14 +126,14 @@ __kernel void echoblureffect(__read_only image3d_t src_img, __write_only image2d
 		act_pix2 = read_imageui( src_img, sampler, (int4)(vert_translation,hor_translation,i,0) );
 		
 		/* transparency overlay */
-		out_pix.x = ( ( ( opacity * act_pix2.x ) + (( 255 - opacity ) * out_pix.x) ) / 255 );
-		out_pix.y = ( ( ( opacity * act_pix2.y ) + (( 255 - opacity ) * out_pix.y) ) / 255 );
-		out_pix.z = ( ( ( opacity * act_pix2.z ) + (( 255 - opacity ) * out_pix.z) ) / 255 );
+		out_pix.x = ( ( mul24( opacity, act_pix2.x ) +  mul24(( 255 - opacity ), out_pix.x) ) / 255 );
+		out_pix.y = ( ( mul24( opacity, act_pix2.y ) +  mul24(( 255 - opacity ), out_pix.y) ) / 255 );
+		out_pix.z = ( ( mul24( opacity, act_pix2.z ) +  mul24(( 255 - opacity ), out_pix.z) ) / 255 );
 	}
 	/* once again, the first frame, to make sure, it is visible enough */
-	out_pix.x = ( ( ( 75 * act_pix.x ) + (( 255 - 75 ) * out_pix.x) ) / 255 );
-	out_pix.y = ( ( ( 75 * act_pix.y ) + (( 255 - 75 ) * out_pix.y) ) / 255 );
-	out_pix.z = ( ( ( 75 * act_pix.z ) + (( 255 - 75) * out_pix.z) ) / 255 );
+	out_pix.x = ( ( mul24( 75, act_pix.x ) + mul24(( 255 - 75), out_pix.x) ) / 255 );
+	out_pix.y = ( ( mul24( 75, act_pix.y ) + mul24(( 255 - 75), out_pix.y) ) / 255 );
+	out_pix.z = ( ( mul24( 75, act_pix.z ) + mul24(( 255 - 75), out_pix.z) ) / 255 );
 
 	write_imageui( dst_img, (int2)(x,y), (int4)out_pix );
 }

@@ -28,8 +28,6 @@
 using namespace GRAVID;
 
 int main(int argc, char** argv){
-
-
 		// create the decoder for a video file
 		VideoReader reader1("videos/fadeVid1.mpg");
 		VideoInfo vidInf = reader1.getVideoInfo();
@@ -67,37 +65,44 @@ int main(int argc, char** argv){
 		
 		// for the  echo-effect
 		// srand ( time(NULL) );
+		
+		VideoWriter vidWriter( "videos/out1.mpg", vidInf );
 
 		while ( reader1.hasNextFrame() ) {
 			reader1.changeFrameBuffer( frameVid1 );
 			reader1.decodeNextFrame();
 
 			//only for fading
-			//reader2.changeFrameBuffer( frameVid2 );
-			//reader2.decodeNextFrame();
+			reader2.changeFrameBuffer( frameVid2 );
+			reader2.decodeNextFrame();
 
 			//edgeEff.sobelOperator( frameVid1, output, vidInf.width, vidInf.height );
-			//fadingEff.fadeAdditive( frameVid1, frameVid2, output, vidInf2.width, vidInf2.height, ((float)i/(float)vidInf.nb_frames) );
+			fadingEff.fadeAdditive( frameVid1, frameVid2, output, vidInf2.width, vidInf2.height, ((float)i/(float)vidInf.nb_frames) );
+			fadingEff.fadeBlind( frameVid1, frameVid2, output, vidInf2.width, vidInf2.height, ((float)i/(float)vidInf.nb_frames) );
 			
 			// für den echo-Effekt, CPU-Version 
 
-			RGBA* tmp_frame = (RGBA*)malloc( pic_size );
+			//int frame_cnt = i+1;
+		/*	RGBA* tmp_frame = (RGBA*)malloc( pic_size );
 			memcpy( tmp_frame, frameVid1, pic_size);
 			
-			int frame_cnt = i+1;
+			
 			frames.push_back( tmp_frame );
 			if ( i > 4 ) {
 				frames.erase(frames.begin());
 				frame_cnt = 5;
 			}
-			
+			*/
 			//std::cout << " frame-nr: " << i << std::endl;
 			
-			echEff.renderEcho( frames, output, vidInf.width, vidInf.height, i, frame_cnt );
+			//echEff.renderEcho( frames, output, vidInf.width, vidInf.height, i, frame_cnt );
 			// write the image to output
 			sprintf(filename,"pictures/pic%i.ppm",i);
+			
+			vidWriter.writeMultiMedFrame((RGBA*) output);
 
-			writePPM( output, filename, vidInf.width, vidInf.height);
+			//writePPM( output, filename, vidInf.width, vidInf.height);
 			i++;
 		}
+		vidWriter.finalizeVideo();
 }

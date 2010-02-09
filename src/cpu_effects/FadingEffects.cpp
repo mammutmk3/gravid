@@ -43,14 +43,14 @@ void FadingEffects::fadeBlind(RGBA* inpic0, RGBA* inpic1, RGBA* output_pic, int 
 	int opacity = (int)255*act_percent;
 // 	std::cout << opacity << std::endl;
 	
-    for (int i=0; i<height; i++) {
-        for (int n=0; n<width; n++) {
+    for (int h=0; h<height; h++) {
+        for (int w=0; w<width; w++) {
 
 		//Adresse berechnen
-		int address = (n+width*i);
+		int address = (w+width*h);
 
-		RGBA act_pix1 = inpic0[address];
-		RGBA act_pix2 = inpic1[address];
+		//RGBA act_pix1 = inpic0[address];
+		//RGBA act_pix2 = inpic1[address];
 		
 		/* calculate equidistant distance*/
 		/* how much blinds */
@@ -58,17 +58,26 @@ void FadingEffects::fadeBlind(RGBA* inpic0, RGBA* inpic1, RGBA* output_pic, int 
 		int distance = width / blinds;
 		
 		/* entfernung berechnen wie weit das erste video noch gehen soll */
-		/*if n zwischen abstand und grenze der jalousie, dann nimm video 1, else video2
+		/*if n zwischen abstand und grenze der jalousie, dann nimm video 1, else video2 */
 		
-		unsigned char red = 
-		unsigned char green = 
-		unsigned char blue =
+		/* percentage of the actual pixel in a blind */
+		float pc_act_pix;// = w % distance;
+		//if ( h == 0 ) {
+			//std::cout << "dist:   " << distance << std::endl;
 
+			//std::cout << "pc_mod: " << pc_act_pix << std::endl;
+			pc_act_pix = (float)(w % distance) / distance;		
+			//std::cout << "pc_akt: " << pc_act_pix << std::endl;
+		//}
+		
 		RGBA tmp;
-		tmp.r = red;
-		tmp.g = green;
-		tmp.b = blue;
-		output_pic[address] = tmp;*/
+		
+		if ( pc_act_pix < act_percent ) {
+			tmp = inpic0[address];
+		} else {
+			tmp = inpic1[address];
+		}
+		output_pic[address] = tmp;
         }
     }
 }
