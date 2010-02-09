@@ -1,12 +1,12 @@
 /*
- * blendPipeline.h
+ * fadePipeline.h
  *
  *  Created on: Feb 9, 2010
  *      Author: lars
  */
 
-#ifndef BLENDPIPELINE_H_
-#define BLENDPIPELINE_H_
+#ifndef FADEPIPELINE_H_
+#define FADEPIPELINE_H_
 
 #include "common_gravid.h"
 #include "types.h"
@@ -14,7 +14,7 @@
 #include "CL/cl.h"
 
 namespace GRAVID{
-  class BlendPipeline : public Common{
+  class FadePipeline : public Common{
   private:
     // for creating the buffers
     cl_context ctx;
@@ -54,8 +54,8 @@ namespace GRAVID{
     // event to track the copy process from the device
     cl_event copyFromDevice_event;
   public:
-    BlendPipeline(cl_context ctx, cl_command_queue cmdQ, size_t width, size_t height);
-    ~BlendPipeline();
+    FadePipeline(cl_context ctx, cl_command_queue cmdQ, size_t width, size_t height);
+    ~FadePipeline();
 
     /**
     * returns the address of the area where the decoder can write the frame of the first video
@@ -102,4 +102,4 @@ namespace GRAVID{
   };
 }
 
-#endif /* BLENDPIPELINE_H_ */
+#endif /* FADEPIPELINE_H_ */

@@ -1,17 +1,17 @@
 /*
- * blendPipeline.cpp
+ * fadePipeline.cpp
  *
  *  Created on: Feb 09, 2010
  *      Author: lars
  */
 
-#include "opencl/blendPipeline.h"
+#include "opencl/fadePipeline.h"
 
 #include <CL/cl.h>
 
 using namespace GRAVID;
 
-BlendPipeline::BlendPipeline(cl_context ctx, cl_command_queue cmdQ, size_t width, size_t height){
+FadePipeline::FadePipeline(cl_context ctx, cl_command_queue cmdQ, size_t width, size_t height){
   // initialize members
   this->ctx = ctx;
   this->cmdQ = cmdQ;
@@ -75,7 +75,7 @@ BlendPipeline::BlendPipeline(cl_context ctx, cl_command_queue cmdQ, size_t width
     this->errorHappened("couldn't map to 2D host image"); 
 }
 
-BlendPipeline::~BlendPipeline(){
+FadePipeline::~FadePipeline(){
   cl_event unmapping[3];
   if(NULL != this->outputImage)
     clEnqueueUnmapMemObject(this->cmdQ, this->host2D_out, this->outputImage, 0, NULL, &unmapping[0]);
@@ -96,7 +96,7 @@ BlendPipeline::~BlendPipeline(){
     clReleaseMemObject(this->host3D_in);
 }
 
-cl_event BlendPipeline::copyToDevice(cl_event waitFor){
+cl_event FadePipeline::copyToDevice(cl_event waitFor){
   if(NULL != waitFor)
     clWaitForEvents(1,&waitFor);
 
@@ -112,7 +112,7 @@ cl_event BlendPipeline::copyToDevice(cl_event waitFor){
   return this->copyToDevice_event;
 }
 
-cl_event BlendPipeline::copyFromDevice(cl_event waitFor){
+cl_event FadePipeline::copyFromDevice(cl_event waitFor){
   if(NULL != waitFor)
     clWaitForEvents(1,&waitFor);
 

@@ -11,6 +11,7 @@
 #include "opencl/executionLogic.h"
 #include "opencl/videoPipeline.h"
 #include "opencl/kernel.h"
+#include "opencl/fadePipeline.h"
 
 #include <CL/cl.h>
 
@@ -20,7 +21,6 @@ void GRAVID::exec_img_overlay(VideoPipeline *pVidPipe, Kernel *pKernel, VideoRea
 	 */
 	static cl_event lastKernel = NULL;
 	static cl_event copyToDevice = NULL;
-	static cl_event copyFromDevice = NULL;
 	static bool init_done = false;
 
 	if(!init_done){
@@ -104,4 +104,37 @@ void GRAVID::exec_img_effects(VideoReader *pReader, MemoryManager *pMemMan, Kern
 			pipeLineEmptyPhase++;
 		}
 	}
+}
+
+void GRAVID::exec_fade_effects(VideoReader *pReader1, VideoReader *pReader2, FadePipeline *pFPipe, Kernel *pKernel, 
+				cl_command_queue cmdQ, const unsigned int nb_frames){
+  static bool done = false;
+  static unsigned int currentFrame = 1;
+  if(!done){
+    pReader1->changeFrameBuffer(pFPipe->getFirstImage_forDecoder());
+    pReader2->changeFrameBuffer(pFPipe->getSecondImage_forDecoder());
+    done = true;
+  }
+
+  // decode both the input images
+  pReader1->decodeNextFrame();
+  pReader2->decodeNextFrame();
+
+  cl_event copyToDevice = pFPipe->copyToDevice(NULL);
+
+  float percentage = currentFrame / (float)nb_frames;
+  pKernel->setKernelArgument(2,percentage);
+
+  // start the kernel as soon as the copy process is finished
+  cl_event last_kernel;
+  cl_int errorCode = clEnqueueNDRangeKernel(cmdQ, pKernel->getNativeKernel(),
+					    2, NULL, pKernel->getGlobalDim(), pKernel->getLocalDim(),
+					    1, &copyToDevice, &last_kernel);
+  if(CL_SUCCESS != errorCode){
+    std::cerr << "couldn't enqueue fade effect kernel" << std::endl;
+    exit(1);
+  }
+
+  cl_event copyFromDevice = pFPipe->copyFromDevice(last_kernel);
+  clWaitForEvents(1,&copyFromDevice);
 }
