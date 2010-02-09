@@ -48,6 +48,57 @@ namespace GRAVID{
     RGBA* inputImage_second;
     // the area where the output frame can be read
     RGBA* outputImage;
+
+    // event to track the copy process to the device
+    cl_event copyToDevice_event;
+    // event to track the copy process from the device
+    cl_event copyFromDevice_event;
+  public:
+    BlendPipeline(cl_context ctx, cl_command_queue cmdQ, size_t width, size_t height);
+    ~BlendPipeline();
+
+    /**
+    * returns the address of the area where the decoder can write the frame of the first video
+    */
+    RGBA* getFirstImage_forDecoder(){return this->inputImage_first;}
+
+    /**
+    * returns the address of the area where the decoder can write the frame of the second video
+    */
+    RGBA* getSecondImage_forDecoder(){return this->inputImage_second;}
+
+    /**
+    * returns the address of the output image memory area
+    */
+    RGBA* getImage_forEncoder(){return this->outputImage;}
+
+    /**
+    * returns the 3D image object on the device to be used as a parameter in kernel launches
+    */
+    cl_mem get3DInputImage(){return this->dev3D_in;}
+
+    /**
+    * returns the 2D image object on the device to be used as a parameter in kernel launches
+    */
+    cl_mem get2DOutputImage(){return this->dev2D_out;}
+
+    /**
+    * copies the host input areas to the 3D image on the device
+    *
+    * @param waitFor the event that has to finish before the copy process can be started
+    *
+    * @return an event to keep track of the copy process
+    */
+    cl_event copyToDevice(cl_event waitFor);
+
+    /**
+    * copies the result image back from the device to the host
+    *
+    * @param waitFor the event that has to finish before the copy process can be started
+    *
+    * @return an event to keep track of the copy process
+    */
+    cl_event copyFromDevice(cl_event waitFor);
   };
 }
 
