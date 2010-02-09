@@ -49,7 +49,7 @@ int main(int argc, char** argv){
 			oclProgram = new OpenCLProgram("src/opencl/kernels/video_effects.cl");
 			// create the pipeline to execute a video effect
 			vidPipe = new VideoPipeline(oclProgram->getContext(), oclProgram->getCommandQueue(), FIFO_LENGTH,vidInf.width, vidInf.height);
-			switch(cmdPars.getVideoEffect()){
+			switch( cmdPars.getVideoEffect() ){
 				case GHOST: {
 									pKernel = new Kernel(oclProgram->getProgram(), "ghosteffect", vidInf.width, vidInf.height);
 									if(cmdPars.hasOutputFile()){

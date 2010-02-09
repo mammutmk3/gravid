@@ -31,6 +31,11 @@ namespace GRAVID{
 		ECHO_BLUR,
 		CAM_STAB
 	};
+	
+	enum Fade_Effect{
+		ADDITIVE,
+		BLINDS
+	};
 
 	/**
 	 * this struct represents the color information for 1 pixel in an 32-bit RGBA image
