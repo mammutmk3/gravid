@@ -16,7 +16,8 @@ namespace GRAVID{
 
 	enum RenderMode{
 		IMAGE,
-		VIDEO
+		VIDEO,
+		FADE
 	};
 
 	enum Image_Effect{
@@ -34,7 +35,9 @@ namespace GRAVID{
 	
 	enum Fade_Effect{
 		ADDITIVE,
-		BLINDS
+		BLINDS,
+		CIRCLE,
+		BOOK
 	};
 
 	/**

@@ -12,6 +12,7 @@
 #include "opencl/memoryManager.h"
 #include "opencl/executionLogic.h"
 #include "opencl/videoPipeline.h"
+#include "opencl/fadePipeline.h"
 #include "codec/videoReader.h"
 #include "opencl/kernel.h"
 
@@ -38,6 +39,11 @@ VideoPipeline *pVidPipe;
 Kernel *pKernel;
 cl_command_queue cmdQ;
 Video_Effect vidEffect;
+
+// for fade effects
+FadePipeline *pFPipe;
+VideoReader *pReader2;
+unsigned int nb_frames;
 
 // to check, how much time elapsed since rendering the last frame
 timeval last_time;
@@ -99,6 +105,16 @@ void draw_video(){
 	glFlush();
 }
 
+void draw_fade(){
+  static unsigned int current_frame = 1;
+  if(current_frame <= nb_frames){
+    exec_fade_effects(pReader, pReader2, pFPipe, pKernel,cmdQ, nb_frames);
+    glDrawPixels(gl_window_width, gl_window_height, GL_RGBA, GL_UNSIGNED_BYTE,pFPipe->getImage_forEncoder());
+    glutPostRedisplay();
+  }
+  glFlush();
+}
+
 void GRAVID::glDisplay(int argc, char** argv,
 						const size_t windowWidth, const size_t windowHeight, RenderMode rMode){
 	// save the width and height
@@ -146,4 +162,14 @@ void GRAVID::initOpenGL_video(VideoPipeline *pVidPipe_local, Kernel *pKernel_loc
 	cmdQ = cmdQ_local;
 
 	vidEffect = vidEffect_local;
+}
+
+void GRAVID::initOpenGL_fade(FadePipeline *pFPipe_l, Kernel *pKernel_l, VideoReader *pReader1_l, VideoReader *pReader2_l, 
+		      cl_command_queue cmdQ_l, const unsigned int nb_frames_l){
+  pFPipe = pFPipe_l;
+  pKernel = pKernel_l;
+  pReader = pReader1_l;
+  pReader2 = pReader2_l;
+  cmdQ = cmdQ_l;
+  nb_frames = nb_frames_l;
 }

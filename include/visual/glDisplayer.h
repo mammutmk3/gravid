@@ -39,8 +39,8 @@ namespace GRAVID{
 	/**
 	 * initialize OpenGL for fade effects
 	 */
-	/*void initOpenGL_fade(FadePipeline *pFPipe_l, Kernel *pKernel_l, VideoReader *pReader1_l, VideoReader *pReader2_l, 
-			      cl_command_queue cmdQ_l, Fade_Effect fEffect_l, const unsigned int nb_frames);*/
+	void initOpenGL_fade(FadePipeline *pFPipe_l, Kernel *pKernel_l, VideoReader *pReader1_l, VideoReader *pReader2_l, 
+			      cl_command_queue cmdQ_l, const unsigned int nb_frames);
 }
 
 #endif /* GLDISPLAYER_H_ */

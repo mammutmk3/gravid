@@ -77,7 +77,6 @@ int main(int argc, char** argv){
 				case CAM_STAB : break;
 			}
 		}
-		/*
 		else if(cmdPars.hasFadeEffect()){
 		  // create a second video reader
 		  VideoReader reader2(cmdPars.getInputVideo2());
@@ -87,9 +86,9 @@ int main(int argc, char** argv){
 		  pFPipe = new FadePipeline(oclProgram->getContext(), oclProgram->getCommandQueue(), vidInf.width, vidInf.height);
 		  std::string kernelName;
 		  switch(cmdPars.getFadeEffect()){
-		  case <blur>: kernelName = <>;break;
-		  case <shape1>: kernelName = <>;break;
-		  case <shape2>: kernelName = <>;break;
+		  case CIRCLE: kernelName = "testFade";break;
+		  /*case <shape1>: kernelName = <>;break;
+		  case <shape2>: kernelName = <>;break;*/
 		  }
 		  pKernel = new Kernel(oclProgram->getProgram(), kernelName.c_str(), vidInf.width, vidInf.height);
 		  // set the fixed kernel parameters
@@ -107,9 +106,11 @@ int main(int argc, char** argv){
 		    pVidWriter->finalizeVideo();
 		  }
 		  else{
+		    // display setup
+		    initOpenGL_fade(pFPipe, pKernel, &reader, &reader2, oclProgram->getCommandQueue(), nb_frames);
+		    glDisplay(argc, argv, vidInf.width, vidInf.height, FADE);
 		  }
 		}
-		*/
 		else{
 			// create the new OpenCL program to process that video
 			oclProgram = new OpenCLProgram("src/opencl/kernels/image_effects.cl");
