@@ -16,11 +16,13 @@
 #include "opencl/memoryManager.h"
 #include "opencl/kernelExecutor.h"
 #include "opencl/videoPipeline.h"
+#include "opencl/fadePipeline.h"
 #include "opencl/executionLogic.h"
 
 #include <iostream>
 #include <cstdlib>
 #include <stdexcept>
+#include <string>
 
 #include <pthread.h>
 
@@ -36,6 +38,7 @@ int main(int argc, char** argv){
 	KernelExecutor *kExec = NULL;
 	VideoWriter *pVidWriter = NULL;
 	Kernel *pKernel = NULL;
+	FadePipeline *pFPipe = NULL;
 	try{
 		// parse the command line arguments
 		CmdLineParser cmdPars(argc, argv);
@@ -49,42 +52,64 @@ int main(int argc, char** argv){
 			oclProgram = new OpenCLProgram("src/opencl/kernels/video_effects.cl");
 			// create the pipeline to execute a video effect
 			vidPipe = new VideoPipeline(oclProgram->getContext(), oclProgram->getCommandQueue(), FIFO_LENGTH,vidInf.width, vidInf.height);
-			switch( cmdPars.getVideoEffect() ){
-				case GHOST: {
-									pKernel = new Kernel(oclProgram->getProgram(), "ghosteffect", vidInf.width, vidInf.height);
-									if(cmdPars.hasOutputFile()){
-										// create an encoder
-										pVidWriter = new VideoWriter(cmdPars.getOutputFile(), vidInf);
-										while(reader.hasNextFrame()){
-											GRAVID::exec_img_overlay(vidPipe,pKernel,&reader,oclProgram->getCommandQueue());
-											pVidWriter->writeMultiMedFrame(vidPipe->getResultFrame());
-										}
-										pVidWriter->finalizeVideo();
-									}
-									else{
-										initOpenGL_video(vidPipe, pKernel, &reader, oclProgram->getCommandQueue(),GHOST);
-										glDisplay(argc, argv, vidInf.width, vidInf.height, VIDEO);
-									}
-									}break;									
+			std::string kernelName;
+			switch(cmdPars.getVideoEffect()){
+				// using switch fall through to reduce code
+				case GHOST: kernelName = "ghosteffect";								
 				case ECHO_BLUR:{
-									pKernel = new Kernel(oclProgram->getProgram(), "echoblureffect", vidInf.width, vidInf.height);
-									if(cmdPars.hasOutputFile()){
-										// create an encoder
-										pVidWriter = new VideoWriter(cmdPars.getOutputFile(), vidInf);
-										while(reader.hasNextFrame()){
-											GRAVID::exec_img_overlay(vidPipe,pKernel,&reader,oclProgram->getCommandQueue());
-											pVidWriter->writeMultiMedFrame(vidPipe->getResultFrame());
-										}
-										pVidWriter->finalizeVideo();
-									}
-									else{
-										initOpenGL_video(vidPipe, pKernel, &reader, oclProgram->getCommandQueue(),ECHO_BLUR);
-										glDisplay(argc, argv, vidInf.width, vidInf.height, VIDEO);
-									}
-									}break;									
+						if(kernelName.empty())
+						  kernelName = "echoblureffect";
+						pKernel = new Kernel(oclProgram->getProgram(), kernelName.c_str(), vidInf.width, vidInf.height);
+						if(cmdPars.hasOutputFile()){
+							// create an encoder
+							pVidWriter = new VideoWriter(cmdPars.getOutputFile(), vidInf);
+							while(reader.hasNextFrame()){
+								GRAVID::exec_img_overlay(vidPipe,pKernel,&reader,oclProgram->getCommandQueue());
+								pVidWriter->writeMultiMedFrame(vidPipe->getResultFrame());
+							}
+							pVidWriter->finalizeVideo();
+						}
+						else{
+							initOpenGL_video(vidPipe, pKernel, &reader, oclProgram->getCommandQueue(),ECHO_BLUR);
+							glDisplay(argc, argv, vidInf.width, vidInf.height, VIDEO);
+						}
+						}break;									
 				case CAM_STAB : break;
 			}
 		}
+		/*
+		else if(cmdPars.hasFadeEffect()){
+		  // create a second video reader
+		  VideoReader reader2(cmdPars.getInputVideo2());
+
+		  oclProgram = new OpenCLProgram("src/opencl/kernels/fade_effects.cl");
+		  // create the memory pipeline
+		  pFPipe = new FadePipeline(oclProgram->getContext(), oclProgram->getCommandQueue(), vidInf.width, vidInf.height);
+		  std::string kernelName;
+		  switch(cmdPars.getFadeEffect()){
+		  case <blur>: kernelName = <>;break;
+		  case <shape1>: kernelName = <>;break;
+		  case <shape2>: kernelName = <>;break;
+		  }
+		  pKernel = new Kernel(oclProgram->getProgram(), kernelName.c_str(), vidInf.width, vidInf.height);
+		  // set the fixed kernel parameters
+		  pKernel->setKernelArgument(0,pFPipe->get3DInputImage());
+		  pKernel->setKernelArgument(1,pFPipe->get2DOutputImage());
+		  // extract the frame number of the shorter of the two videos
+		  unsigned int nb_frames = (vidInf.nb_frames < reader2.getVideoInfo().nb_frames)? vidInf.nb_frames: reader2.getVideoInfo().nb_frames;
+		  if(cmdPars.hasOutputFile()){
+		    // create an encoder
+		    pVidWriter = new VideoWriter(cmdPars.getOutputFile(), vidInf);
+		    for(unsigned int i=0;i<nb_frames;i++){
+		      exec_fade_effects(&reader, &reader2, pFPipe, pKernel,oclProgram->getCommandQueue(), nb_frames);
+		      pVidWriter->writeMultiMedFrame(pFPipe->getImage_forEncoder());
+		    }
+		    pVidWriter->finalizeVideo();
+		  }
+		  else{
+		  }
+		}
+		*/
 		else{
 			// create the new OpenCL program to process that video
 			oclProgram = new OpenCLProgram("src/opencl/kernels/image_effects.cl");
@@ -148,6 +173,7 @@ int main(int argc, char** argv){
 		delete vidPipe; vidPipe = NULL;
 		delete pVidWriter; pVidWriter = NULL;
 		delete pKernel; pKernel = NULL;
+		delete pFPipe; pFPipe = NULL;
 	}
 	catch(std::logic_error &e){
 		// print an error message
@@ -171,6 +197,9 @@ int main(int argc, char** argv){
 
 		if(NULL != pKernel)
 			delete pKernel;
+
+		if(NULL != pFPipe)
+			delete pFPipe;
 
 		// close the program
 		exit(-1);
