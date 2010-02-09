@@ -14,13 +14,13 @@
 #define CMD_LENGTH_MIN 3
 #define CMD_LENGTH_MAX 4
 
-#define CMD_USAGE "gravid <{image_filter} | video_filter> input_video < --display | output_video>"
+#define CMD_USAGE "gravid <{image_filter} | video_filter | fade_effect <input_video>> input_video < --display | output_video>"
 #define CMD_IMAGE "g : gray filter\ns : sepia filter\ne : edge detection\nb : gaussian blur"
 #define CMD_VIDEO "o : ghost\nq : blur\nc : camera stabilisation"
-#define CMD_FADE "a : additive fade\nl : blinds\n"
+#define CMD_FADE "a : additive fade\nl : blinds\np : circle fade\nt : triangle\n"
 #define CMD_EXAMPLE "./gravid gb video1.mpg video2.mpeg"
 
-#define VALID_FLTR_FLAGS "gseboqcal"
+#define VALID_FLTR_FLAGS "gseboqcalpt"
 
 using namespace GRAVID;
 
@@ -47,7 +47,7 @@ CmdLineParser::CmdLineParser(const int argc, char** argv){
 		this->args[i] = argv[i+1];
 	}
 
-	// allocate and array for the image effects;
+	// allocate an array for the image effects;
 	this->imgEffects = new Image_Effect[this->args[0].size()];
 
 	// check if only valid filter options are beeing used
@@ -59,29 +59,26 @@ CmdLineParser::CmdLineParser(const int argc, char** argv){
 	// extract the wanted image effects, if any
 	this->parseImageEffects();
 
-	// get the video or the fade effect only, if no video effect was specified
+	// get the video or the fade effect only, if no image effect was specified
+	// set the paramter-position, where the output-file is expected
+	int param_outfile = 2;
 	if(0 == this->nb_img_effects){
-		std::cout << "test1" << std::endl;
 		if(1 == this->args[0].size()) {
 			if ( !this->parseVideoEffect() ) {
 				if ( this->parseFadeEffect() ) {
 					this->inputFile2 = this->args[2];
+					param_outfile = 3;
 				}
 			}
 		}
 		else{
 			this->printUsage();
-			this->errorHappened("multiple video/fade effects or combined video/fade/image effects");
+			this->errorHappened("multiple video/fade effects or combined [video/fade]-image effects");
 		}
 	}
 
 	// set the input file
 	this->inputFile = this->args[1];
-
-	// set the paramter-position, where the output-file is expected
-	int param_outfile = 2;
-	if (  this->parseFadeEffect() )
-		param_outfile = 3;
 
 	// set the outputfile, if desired
 	if(0 == this->args[param_outfile].compare("--display")){
@@ -150,6 +147,8 @@ bool CmdLineParser::parseFadeEffect(){
 	switch(this->args[0][0]){
 	case 'a' : this->fadeEffect = ADDITIVE; return true;
 	case 'l' : this->fadeEffect = BLINDS; return true;
+	case 'p' : this->fadeEffect = CIRCLE; return true;
+	case 't' : this->fadeEffect = BOOK; return true;
 	}
 	this->nb_fade_effects = 0;
 	return false;
