@@ -14,6 +14,7 @@
 #include "opencl/fadePipeline.h"
 
 #include <CL/cl.h>
+#include <iostream>
 
 void GRAVID::exec_img_overlay(VideoPipeline *pVidPipe, Kernel *pKernel, VideoReader *pReader, cl_command_queue cmdQ){
 	/**
@@ -137,4 +138,5 @@ void GRAVID::exec_fade_effects(VideoReader *pReader1, VideoReader *pReader2, Fad
 
   cl_event copyFromDevice = pFPipe->copyFromDevice(last_kernel);
   clWaitForEvents(1,&copyFromDevice);
+  currentFrame++;
 }

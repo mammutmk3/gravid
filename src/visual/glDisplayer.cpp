@@ -63,8 +63,6 @@ bool fps_ok() {
 	if ( elapsed_time < framerate )
 		return false;
 	
-	std::cout << framerate << " "<<  elapsed_time << std::endl;
-	//std::cout << vidInf.frame_rate.den << std::endl;
 	gettimeofday( &last_time, NULL);
 	return true;
 }
@@ -107,8 +105,9 @@ void draw_video(){
 
 void draw_fade(){
   static unsigned int current_frame = 1;
-  if(current_frame <= nb_frames){
+  if(current_frame < nb_frames){
     exec_fade_effects(pReader, pReader2, pFPipe, pKernel,cmdQ, nb_frames);
+    current_frame++;
     glDrawPixels(gl_window_width, gl_window_height, GL_RGBA, GL_UNSIGNED_BYTE,pFPipe->getImage_forEncoder());
     glutPostRedisplay();
   }
@@ -131,11 +130,11 @@ void GRAVID::glDisplay(int argc, char** argv,
 	glutCreateWindow("GRAVID video editor");
 
 	// register Callback functions
-	if(IMAGE == rMode){
-		glutDisplayFunc(draw_image);
-	}
-	else{
-		glutDisplayFunc(draw_video);
+	switch(rMode){
+	case IMAGE: glutDisplayFunc(draw_image); break;
+	case VIDEO: glutDisplayFunc(draw_video); break;
+	case FADE : glutDisplayFunc(draw_fade);break;
+	default : std::cerr << "no valid draw function available" << std::endl;
 	}
 
 	// default initialization

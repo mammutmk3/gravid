@@ -8,6 +8,7 @@
 #include "opencl/fadePipeline.h"
 
 #include <CL/cl.h>
+#include <iostream>
 
 using namespace GRAVID;
 
@@ -38,7 +39,7 @@ FadePipeline::FadePipeline(cl_context ctx, cl_command_queue cmdQ, size_t width, 
   if(CL_SUCCESS != this->errorCode)
     this->errorHappened("couldn't create 3D image on the host");
   // create the 3D image on the device
-  this->host3D_in = clCreateImage3D(this->ctx, CL_MEM_READ_ONLY, &imgFmt, this->width, this->height, 
+  this->dev3D_in = clCreateImage3D(this->ctx, CL_MEM_READ_ONLY, &imgFmt, this->width, this->height,
 				    2, 0,0, NULL, &this->errorCode);
   if(CL_SUCCESS != this->errorCode)
     this->errorHappened("couldn't create 3D image on the device");
@@ -101,10 +102,14 @@ cl_event FadePipeline::copyToDevice(cl_event waitFor){
     clWaitForEvents(1,&waitFor);
 
   // copy all 2 frames to the device
-  size_t origin[3]={0,0,0},region[3]={this->width, this->height,2};
-  this->errorCode = clEnqueueCopyImage(this->cmdQ, this->host3D_in, this->dev3D_in, 
-					origin, origin, region,
-					0, NULL, &this->copyToDevice_event);
+  size_t origin[3]={0,0,0},region[3]={this->width, this->height,1};
+  this->errorCode = clEnqueueWriteImage(this->cmdQ, this->dev3D_in, CL_FALSE, origin, region, 0, 0,
+  											(void*)this->inputImage_first, 0, NULL,
+  											NULL);
+  origin[2] = 1;
+  this->errorCode = clEnqueueWriteImage(this->cmdQ, this->dev3D_in, CL_FALSE, origin, region, 0, 0,
+    											(void*)this->inputImage_second, 0, NULL,
+    											&this->copyToDevice_event);
 
   if(CL_SUCCESS != this->errorCode)
     this->errorHappened("couldn't enqueue the copy process to the device");
@@ -113,14 +118,15 @@ cl_event FadePipeline::copyToDevice(cl_event waitFor){
 }
 
 cl_event FadePipeline::copyFromDevice(cl_event waitFor){
-  if(NULL != waitFor)
-    clWaitForEvents(1,&waitFor);
+  /*if(NULL != waitFor)
+    clWaitForEvents(1,&waitFor);*/
 
   // copy all 2 frames to the device
   size_t origin[3]={0,0,0},region[3]={this->width, this->height,1};
-  this->errorCode = clEnqueueCopyImage(this->cmdQ, this->dev2D_out, this->host2D_out, 
-					origin, origin, region,
-					0, NULL, &this->copyFromDevice_event);
+  this->errorCode = clEnqueueReadImage(this->cmdQ, this->dev2D_out, CL_FALSE,
+										origin, region, 0, 0,
+										(void *)this->outputImage,
+										0, NULL, &this->copyFromDevice_event);
 
   if(CL_SUCCESS != this->errorCode)
     this->errorHappened("couldn't enqueue the copy process from the device");
