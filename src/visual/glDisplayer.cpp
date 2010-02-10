@@ -55,15 +55,15 @@ bool fps_ok() {
 	
 	VideoInfo vidInf = pReader->getVideoInfo();
 	
-	long int framerate = ( vidInf.frame_rate.num / vidInf.frame_rate.den ) * 1000;
-	long int elapsed_time= abs( cur_time.tv_usec - last_time.tv_usec );
-	if ( cur_time.tv_sec > last_time.tv_sec )
-		elapsed_time += 1000000;
+	long int time_per_frame = ( vidInf.duration / vidInf.nb_frames ) * 1000000;
+	long int cur = cur_time.tv_usec + cur_time.tv_sec * 1000000;
+	long int last = last_time.tv_usec + last_time.tv_sec * 1000000;
 	
-	if ( elapsed_time < framerate )
+	if((cur-last) < time_per_frame)
 		return false;
 	
 	gettimeofday( &last_time, NULL);
+	std::cout << (cur-last) << std::endl;
 	return true;
 }
 
@@ -81,9 +81,9 @@ void draw_image(){
 		glutPostRedisplay();
 	}
 	GRAVID::exec_img_effects(pReader, pMemMan, pKExec);
-	glDrawPixels(gl_window_width, gl_window_height, GL_RGBA, GL_UNSIGNED_BYTE, pMemMan->getFrame_forEncoder());
 	// play video with correct timecode
 	while ( !fps_ok() ) { }
+	glDrawPixels(gl_window_width, gl_window_height, GL_RGBA, GL_UNSIGNED_BYTE, pMemMan->getFrame_forEncoder());
 	glFlush ();
 }
 
@@ -143,6 +143,7 @@ void GRAVID::glDisplay(int argc, char** argv,
 	glRasterPos2d(-1,1);
 
 	// start the gl-Loop
+	gettimeofday( &last_time, NULL);
 	glutMainLoop();
 }
 
