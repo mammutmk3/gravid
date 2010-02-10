@@ -78,33 +78,35 @@ int main(int argc, char** argv){
 			}
 		}
 		else if(cmdPars.hasFadeEffect()){
-		  // create a second video reader
-		  VideoReader reader2(cmdPars.getInputVideo2());
+			// create a second video reader
+			VideoReader reader2(cmdPars.getInputVideo2());
 
-		  oclProgram = new OpenCLProgram("src/opencl/kernels/fade_effects.cl");
-		  // create the memory pipeline
-		  pFPipe = new FadePipeline(oclProgram->getContext(), oclProgram->getCommandQueue(), vidInf.width, vidInf.height);
-		  std::string kernelName;
-		  switch(cmdPars.getFadeEffect()){
-		  case CIRCLE: kernelName = "testFade";break;
-		  /*case <shape1>: kernelName = <>;break;
-		  case <shape2>: kernelName = <>;break;*/
-		  }
-		  pKernel = new Kernel(oclProgram->getProgram(), kernelName.c_str(), vidInf.width, vidInf.height);
-		  // set the fixed kernel parameters
-		  pKernel->setKernelArgument(0,pFPipe->get3DInputImage());
-		  pKernel->setKernelArgument(1,pFPipe->get2DOutputImage());
-		  // extract the frame number of the shorter of the two videos
-		  unsigned int nb_frames = (vidInf.nb_frames < reader2.getVideoInfo().nb_frames)? vidInf.nb_frames: reader2.getVideoInfo().nb_frames;
-		  if(cmdPars.hasOutputFile()){
-		    // create an encoder
-		    pVidWriter = new VideoWriter(cmdPars.getOutputFile(), vidInf);
-		    for(unsigned int i=0;i<nb_frames;i++){
-		      exec_fade_effects(&reader, &reader2, pFPipe, pKernel,oclProgram->getCommandQueue(), nb_frames);
-		      pVidWriter->writeMultiMedFrame(pFPipe->getImage_forEncoder());
-		    }
-		    pVidWriter->finalizeVideo();
-		  }
+			oclProgram = new OpenCLProgram("src/opencl/kernels/fade_effects.cl");
+			// create the memory pipeline
+			pFPipe = new FadePipeline(oclProgram->getContext(), oclProgram->getCommandQueue(), vidInf.width, vidInf.height);
+			std::string kernelName;
+			switch(cmdPars.getFadeEffect()){
+				case CIRCLE: kernelName = "testFade";break;
+				case ADDITIVE: kernelName = "fadeAdditve";break;
+				case BLINDS: kernelName = "fadeBlind";break;
+				/*case <shape1>: kernelName = <>;break;
+				case <shape2>: kernelName = <>;break;*/
+			}
+			pKernel = new Kernel(oclProgram->getProgram(), kernelName.c_str(), vidInf.width, vidInf.height);
+			// set the fixed kernel parameters
+			pKernel->setKernelArgument(0,pFPipe->get3DInputImage());
+			pKernel->setKernelArgument(1,pFPipe->get2DOutputImage());
+			// extract the frame number of the shorter of the two videos
+			unsigned int nb_frames = (vidInf.nb_frames < reader2.getVideoInfo().nb_frames)? vidInf.nb_frames: reader2.getVideoInfo().nb_frames;
+			if(cmdPars.hasOutputFile()){
+				// create an encoder
+				pVidWriter = new VideoWriter(cmdPars.getOutputFile(), vidInf);
+				for(unsigned int i=0;i<nb_frames;i++){
+				exec_fade_effects(&reader, &reader2, pFPipe, pKernel,oclProgram->getCommandQueue(), nb_frames);
+				pVidWriter->writeMultiMedFrame(pFPipe->getImage_forEncoder());
+				}
+				pVidWriter->finalizeVideo();
+			}
 		  else{
 		    // display setup
 		    initOpenGL_fade(pFPipe, pKernel, &reader, &reader2, oclProgram->getCommandQueue(), nb_frames);

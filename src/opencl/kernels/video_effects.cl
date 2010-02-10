@@ -16,7 +16,7 @@ __kernel void ghosteffect(__read_only image3d_t src_img, __write_only image2d_t 
  
 
 	/* fetch to shared memory with barrier() */
-	if ( get_local_id( 0 ) & get_local_id(1) == 0 ) {
+	if ( get_local_id( 0 ) && get_local_id(1) == 0 ) {
 		int loopCnt = gLoopCnt;
 		/* appoint the starting memory index */
 		start_address = loopCnt % frames_cnt;
@@ -45,7 +45,7 @@ __kernel void ghosteffect(__read_only image3d_t src_img, __write_only image2d_t 
 			i = frames_cnt + i;
 
 		/* pseudo-random generator ;-) */
-		if ( get_local_id( 0 ) & get_local_id(1) == 0 ) {
+		if ( get_local_id( 0 ) && get_local_id(1) == 0 ) {
 			act_pix2 = read_imageui( src_img, sampler, (int4)(i,i,i,0) );
 			/* pseudo-random perturbation of the single frames*/
 			int random = act_pix2.x % (randomness * 2);

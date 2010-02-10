@@ -38,10 +38,6 @@ void FadingEffects::fadeAdditive(RGBA* inpic0, RGBA* inpic1, RGBA* output_pic, i
 
 
 void FadingEffects::fadeBlind(RGBA* inpic0, RGBA* inpic1, RGBA* output_pic, int width, int height, float act_percent) {
-
-	// calculate opacity
-	int opacity = (int)255*act_percent;
-// 	std::cout << opacity << std::endl;
 	
     for (int h=0; h<height; h++) {
         for (int w=0; w<width; w++) {

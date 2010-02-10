@@ -77,7 +77,7 @@ int main(int argc, char** argv){
 			reader2.decodeNextFrame();
 
 			//edgeEff.sobelOperator( frameVid1, output, vidInf.width, vidInf.height );
-			fadingEff.fadeAdditive( frameVid1, frameVid2, output, vidInf2.width, vidInf2.height, ((float)i/(float)vidInf.nb_frames) );
+			//fadingEff.fadeAdditive( frameVid1, frameVid2, output, vidInf2.width, vidInf2.height, ((float)i/(float)vidInf.nb_frames) );
 			fadingEff.fadeBlind( frameVid1, frameVid2, output, vidInf2.width, vidInf2.height, ((float)i/(float)vidInf.nb_frames) );
 			
 			// für den echo-Effekt, CPU-Version 
