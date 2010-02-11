@@ -1,18 +1,81 @@
 const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_REPEAT | CLK_FILTER_NEAREST;
 
+
 /**
-* testing kernel
+* a circle in the center of the image get's bigger displaying the second video within it until it's completly established
+*/
+__kernel void circle_fade(__read_only image3d_t src_img, __write_only image2d_t dst_img, __global float percentage ){
+  __private int x = get_global_id(0);
+  __private int y = get_global_id(1);
+
+  __local float perc_local;
+  __private int4 src_pixel;
+  
+  /* having multiple threads accessing the same value from global memory is slow */
+  /* so copying to local(shared) memory makes sence even if the value is used only 1 time */
+  if(0 == get_local_id(0) && 0 == get_local_id(1)){
+  	 perc_local = percentage;
+  }
+  mem_fence(CLK_LOCAL_MEM_FENCE);  
+
+  int4 img_dim = get_image_dim(src_img);
+  __private int2 center;
+  
+  /* make use of a fast shift by 1 to divide by 2*/
+  center.x = img_dim.x >> 1; center.y = img_dim.y >> 1;
+  
+  /* use the fact, that sqrt is continious, so comparing the power of 2 is just as good and faster*/
+  /* use fast multiplication and addition functions */
+  __private int quad_radius_viewable =  mad24(center.x,center.x,mul24(center.y,center.y));
+  /* use fast native function for abs of a difference */
+  __private int radius_width = abs_diff(x,center.x);
+  __private int radius_height = abs_diff(y,center.y);
+  __private int quad_radius_own =  mad24(radius_width,radius_width,mul24(radius_height,radius_height));
+  
+  /* some divergence is unevidable here */
+  /* but making it just for writing an index is faster than serializing the whole copy process*/
+  uchar index = (quad_radius_own <= quad_radius_viewable*perc_local)? 0: 1;
+  src_pixel = read_imageui( src_img, sampler, (int4)(x,y,index,0));
+
+  write_imageui( dst_img, (int2)(x,y), src_pixel);
+}
+
+/**
+* fade in of 2 videos as one video seems to bite the other with teeth :)
 */
 
-__kernel void testFade(__read_only image3d_t src_img, __write_only image2d_t dst_img, __global float percentage ){
-  __private size_t x = get_global_id(0);
-  __private size_t y = get_global_id(1);
+__kernel void teeth_fade(__read_only image3d_t src_img, __write_only image2d_t dst_img, __global float percentage ){
+  __private int2 coord;
+  coord.x = get_global_id(0);
+  coord.y = get_global_id(1);
 
-  int4 act_pix;
-  int bla = (percentage * 96);
-  act_pix = read_imageui( src_img, sampler, (int4)(x,y,bla%2,0) );
+  __local float perc_local;
+  __private int4 src_pixel;
+  
+  /* having multiple threads accessing the same value from global memory is slow */
+  /* so copying to local(shared) memory makes sence even if the value is used only 1 time */
+  if(0 == get_local_id(0) && 0 == get_local_id(1)){
+  	 perc_local = percentage;
+  }
+  mem_fence(CLK_LOCAL_MEM_FENCE);  
 
-  write_imageui( dst_img, (int2)(x,y), act_pix);
+  __private int index;
+  __private int img_height = get_global_size(1);
+  __private int img_height_half = img_height >> 1;
+  
+  /* Half the peak width is defined 32 here*/
+  /* mod 64 */
+  __private int pos_in_peak = (coord.y >= img_height_half)?(coord.x+32)&63:coord.x & 63;
+  __private float height_val = (img_height * perc_local) + (abs_diff(pos_in_peak,32) << 1);
+  
+  if(coord.y <= img_height_half)
+    index = (coord.y <= height_val)?1:0;
+  else
+    index = (coord.y >= img_height-height_val)?1:0;
+  
+  src_pixel = read_imageui( src_img, sampler, (int4)(coord.x,coord.y,index,0));
+
+  write_imageui( dst_img, (int2)(coord.x,coord.y), src_pixel);
 }
 
 /**

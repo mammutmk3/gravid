@@ -86,11 +86,10 @@ int main(int argc, char** argv){
 			pFPipe = new FadePipeline(oclProgram->getContext(), oclProgram->getCommandQueue(), vidInf.width, vidInf.height);
 			std::string kernelName;
 			switch(cmdPars.getFadeEffect()){
-				case CIRCLE: kernelName = "testFade";break;
+				case CIRCLE: kernelName = "circle_fade";break;
 				case ADDITIVE: kernelName = "fadeAdditve";break;
 				case BLINDS: kernelName = "fadeBlind";break;
-				/*case <shape1>: kernelName = <>;break;
-				case <shape2>: kernelName = <>;break;*/
+				case TEETH: kernelName = "teeth_fade";break;
 			}
 			pKernel = new Kernel(oclProgram->getProgram(), kernelName.c_str(), vidInf.width, vidInf.height);
 			// set the fixed kernel parameters

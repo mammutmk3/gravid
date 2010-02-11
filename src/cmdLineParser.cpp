@@ -17,7 +17,7 @@
 #define CMD_USAGE "gravid <{image_filter} | video_filter | fade_effect <input_video>> input_video < --display | output_video>"
 #define CMD_IMAGE "g : gray filter\ns : sepia filter\ne : edge detection\nb : gaussian blur"
 #define CMD_VIDEO "o : ghost\nq : blur\nc : camera stabilisation"
-#define CMD_FADE "a : additive fade\nl : blinds\np : circle fade\nt : triangle\n"
+#define CMD_FADE "a : additive fade\nl : blinds\np : circle fade\nt : teeth\n"
 #define CMD_EXAMPLE "./gravid gb video1.mpg video2.mpeg"
 
 #define VALID_FLTR_FLAGS "gseboqcalpt"
@@ -148,7 +148,7 @@ bool CmdLineParser::parseFadeEffect(){
 	case 'a' : this->fadeEffect = ADDITIVE; return true;
 	case 'l' : this->fadeEffect = BLINDS; return true;
 	case 'p' : this->fadeEffect = CIRCLE; return true;
-	case 't' : this->fadeEffect = BOOK; return true;
+	case 't' : this->fadeEffect = TEETH; return true;
 	}
 	this->nb_fade_effects = 0;
 	return false;

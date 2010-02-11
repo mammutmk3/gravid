@@ -37,7 +37,7 @@ namespace GRAVID{
 		ADDITIVE,
 		BLINDS,
 		CIRCLE,
-		BOOK
+		TEETH
 	};
 
 	/**

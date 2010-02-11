@@ -12,7 +12,7 @@ __kernel void grayFilter(__read_only image2d_t srcImage, __write_only image2d_t 
 	__private uint4 srcPixel = read_imageui(srcImage, sampler, (int2)(x,y));
 	__private uchar4 dstPixel;
 	
-	__private uchar gray = (uchar)(0.299 * srcPixel.x + 0.587 * srcPixel.y + 0.114 * srcPixel.z);
+	__private uchar gray = (uchar)(mad(0.299f,(float)srcPixel.x,mad(0.587f,(float)srcPixel.y,0.114f * (float)srcPixel.z)));
 	dstPixel.x = dstPixel.y = dstPixel.z = gray;
 	
 	write_imageui(dstImage, (int2)(x,y), (int4)(dstPixel.x,dstPixel.y,dstPixel.z,dstPixel.w));
@@ -28,15 +28,13 @@ __kernel void sepiaFilter(__read_only image2d_t srcImage, __write_only image2d_t
 	__private uint4 srcPixel = read_imageui(srcImage, sampler, (int2)(x,y));
 	__private uchar4 dstPixel;
 	
-	__private const sepiaFactor = 20;
-	
-	__private uchar gray = (uchar)(0.299 * srcPixel.x + 0.587 * srcPixel.y + 0.114 * srcPixel.z);
-	dstPixel.x = min(gray + 2* sepiaFactor, 255);
-	dstPixel.y = min(gray + sepiaFactor,255);
+	__private uchar gray = (uchar)(mad(0.299f,(float)srcPixel.x,mad(0.587f,(float)srcPixel.y,0.114f * (float)srcPixel.z)));
+	/* sepia factor is 20 here */
+	dstPixel.x = min(gray + 40, 255);
+	dstPixel.y = min(gray + 20,255);
 	dstPixel.z = gray;
 	
 	write_imageui(dstImage, (int2)(x,y), (int4)(dstPixel.x,dstPixel.y,dstPixel.z,dstPixel.w));
-	/*dstImage[y*dimension.x+x] = dstPixel;*/
 }
 
 
