@@ -63,7 +63,6 @@ bool fps_ok() {
 		return false;
 	
 	gettimeofday( &last_time, NULL);
-	std::cout << (cur-last) << std::endl;
 	return true;
 }
 
@@ -105,12 +104,13 @@ void draw_video(){
 
 void draw_fade(){
   static unsigned int current_frame = 1;
-  if(current_frame < nb_frames){
+  if(current_frame <= nb_frames){
     exec_fade_effects(pReader, pReader2, pFPipe, pKernel,cmdQ, nb_frames);
     current_frame++;
     glDrawPixels(gl_window_width, gl_window_height, GL_RGBA, GL_UNSIGNED_BYTE,pFPipe->getImage_forEncoder());
     glutPostRedisplay();
   }
+  while ( !fps_ok() ) { }
   glFlush();
 }
 

@@ -118,8 +118,8 @@ cl_event FadePipeline::copyToDevice(cl_event waitFor){
 }
 
 cl_event FadePipeline::copyFromDevice(cl_event waitFor){
-  /*if(NULL != waitFor)
-    clWaitForEvents(1,&waitFor);*/
+  if(NULL != waitFor)
+    clWaitForEvents(1,&waitFor);
 
   // copy all 2 frames to the device
   size_t origin[3]={0,0,0},region[3]={this->width, this->height,1};
