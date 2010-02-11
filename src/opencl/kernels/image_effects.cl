@@ -99,3 +99,240 @@ __kernel void sobelFilter(__read_only image2d_t src_img, __write_only image2d_t 
 	}
 	write_imageui( dst_img, (int2)(x,y), (int4)( tmp.x, tmp.y, tmp.z, tmp.w ) );
 }
+
+__kernel void gaussFilter3(__read_only image2d_t srcImage, __write_only image2d_t dst_img){
+	
+	uint x = get_global_id(0);
+	uint y = get_global_id(1);
+
+	int2 idim = get_image_dim(srcImage);
+
+	__private uint4  srcPixel;
+	
+	__private float ret_r = 0.0f;
+	__private float ret_g = 0.0f;
+	__private float ret_b = 0.0f;
+
+	/* pos: (-1,-1) */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x-1,y-1));
+	ret_r 		+= 	((float)srcPixel.x * 0.0625f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.0625f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.0625f);
+
+	/* pos: (0,-1) */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x,y-1));
+	ret_r 		+= 	((float)srcPixel.x * 0.125f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.125f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.125f);
+
+	/* pos: (1,-1) */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x+1,y-1));
+	ret_r 		+= 	((float)srcPixel.x * 0.0625f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.0625f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.0625f);
+
+	/* pos: (-1,0) */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x-1,y));
+	ret_r 		+= 	((float)srcPixel.x * 0.125f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.125f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.125f);
+
+	/* pos: (0,0) */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x,y));
+	ret_r 		+= 	((float)srcPixel.x * 0.25f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.25f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.25f);
+
+	/* pos: (1,0) */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x+1,y));
+	ret_r 		+= 	((float)srcPixel.x * 0.125f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.125f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.125f);
+
+	/* pos: (-1,1) */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x-1,y+1));
+	ret_r 		+= 	((float)srcPixel.x * 0.0625f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.0625f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.0625f);
+
+	/* pos: (0,1) */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x,y+1));
+	ret_r 		+= 	((float)srcPixel.x * 0.125f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.125f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.125f);
+
+	/* pos: (1,1) */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x+1,y+1));
+	ret_r 		+= 	((float)srcPixel.x * 0.0625f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.0625f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.0625f);
+	
+	write_imageui( dst_img, (int2)(x,y), (int4)( ret_r, ret_g, ret_b, 0 ) );
+};
+
+
+__kernel void gaussFilter5(__read_only image2d_t srcImage, __write_only image2d_t dst_img){
+	
+	uint x = get_global_id(0);
+	uint y = get_global_id(1);
+
+	int2 idim = get_image_dim(srcImage);
+
+	__private uint4  srcPixel;
+
+	__private float ret_r = 0.0f;
+	__private float ret_g = 0.0f;
+	__private float ret_b = 0.0f;
+
+	/* -2,-2 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x-2,y-2));
+	ret_r	 	+= 	((float)srcPixel.x * 0.003086f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.003086f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.003086f);
+
+	/* -0,-1 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x-2,y-1));
+	ret_r	 	+= 	((float)srcPixel.x * 0.012346f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.012346f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.012346f);
+
+	/* -2,0 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x-2,y));
+	ret_r	 	+= 	((float)srcPixel.x * 0.0247f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.0247f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.0247f);
+
+	/* -2,-1 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x-2,y+1));
+	ret_r	 	+= 	((float)srcPixel.x * 0.012346f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.012346f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.012346f);
+
+	/* -2,+2 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x-2,y+2));
+	ret_r	 	+= 	((float)srcPixel.x * 0.003086f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.003086f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.003086f);
+
+	/* -1,-2 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x-1,y-2));
+	ret_r	 	+= 	((float)srcPixel.x * 0.012346f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.012346f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.012346f);
+
+	/* -1,-1 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x-1,y-1));
+	ret_r	 	+= 	((float)srcPixel.x * 0.049383f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.049383f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.049383f);
+
+	/* -1,0 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x-1,y));
+	ret_r	 	+= 	((float)srcPixel.x * 0.0987654f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.0987654f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.0987654f);
+
+	/* -1,+1 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x-1,y+1));
+	ret_r	 	+= 	((float)srcPixel.x * 0.049383f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.049383f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.049383f);
+
+	/* -1,+2 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x-1,y+2));
+	ret_r	 	+= 	((float)srcPixel.x * 0.012346f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.012346f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.012346f);
+
+	/* 0,-2 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x,y-2));
+	ret_r	 	+= 	((float)srcPixel.x * 0.0247f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.0247f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.0247f);
+
+	/* 0,-1 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x,y-1));
+	ret_r	 	+= 	((float)srcPixel.x * 0.0987654f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.0987654f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.0987654f);
+
+	/* 0,0 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x,y));
+	ret_r	 	+= 	((float)srcPixel.x * 0.197531f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.197531f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.197531f);
+
+	/* 0,+1 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x,y+1));
+	ret_r	 	+= 	((float)srcPixel.x * 0.0987654f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.0987654f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.0987654f);
+
+	/* 0,+2 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x,y+2));
+	ret_r	 	+= 	((float)srcPixel.x * 0.0247f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.0247f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.0247f);
+
+	/* 1,-2 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x+1,y-2));
+	ret_r	 	+= 	((float)srcPixel.x * 0.012346f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.012346f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.012346f);
+
+	/* 1,-1 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x+1,y-1));
+	ret_r	 	+= 	((float)srcPixel.x * 0.049383f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.049383f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.049383f);
+
+	/* 1,0 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x+1,y));
+	ret_r	 	+= 	((float)srcPixel.x * 0.0987654f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.0987654f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.0987654f);
+
+	/* 1,+1 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x+1,y+1));
+	ret_r	 	+= 	((float)srcPixel.x * 0.049383f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.049383f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.049383f);
+
+	/* 1,+2 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x+1,y+2));
+	ret_r	 	+= 	((float)srcPixel.x * 0.012346f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.012346f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.012346f);
+	
+	/* 2,-2 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x+2,y-2));
+	ret_r	 	+= 	((float)srcPixel.x * 0.003086f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.003086f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.003086f);
+
+	/* 0,-1 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x+2,y-1));
+	ret_r	 	+= 	((float)srcPixel.x * 0.012346f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.012346f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.012346f);
+
+	/* 2,0 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x+2,y));
+	ret_r	 	+= 	((float)srcPixel.x * 0.0247f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.0247f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.0247f);
+
+	/* 2,-1 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x+2,y+1));
+	ret_r	 	+= 	((float)srcPixel.x * 0.012346f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.012346f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.012346f);
+
+	/* 2,+2 */
+	srcPixel 	= 	read_imageui(srcImage, sampler, (int2)(x+2,y+2));
+	ret_r	 	+= 	((float)srcPixel.x * 0.003086f); 
+	ret_g 		+= 	((float)srcPixel.y * 0.003086f); 
+	ret_b 		+= 	((float)srcPixel.z * 0.003086f);
+
+	write_imageui( dst_img, (int2)(x,y), (int4)( ret_r, ret_g, ret_b, 0 ) );
+} ;

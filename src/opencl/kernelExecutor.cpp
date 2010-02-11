@@ -32,7 +32,8 @@ KernelExecutor::KernelExecutor(cl_command_queue cmdQ,
 		case GRAY_FILTER: kernel = new Kernel(program, "grayFilter", vidInf.width, vidInf.height); break;
 		case SEPIA_FILTER: kernel = new Kernel(program, "sepiaFilter", vidInf.width, vidInf.height); break;
 		case EDGE_DETECTION: kernel = new Kernel(program, "sobelFilter", vidInf.width, vidInf.height); break;
-		case GAUSS_BLUR: kernel = new Kernel(program, "grayFilter", vidInf.width, vidInf.height); break;
+		case GAUSS_BLUR3: kernel = new Kernel(program, "gaussFilter3", vidInf.width, vidInf.height); break;
+		case GAUSS_BLUR5: kernel = new Kernel(program, "gaussFilter5", vidInf.width, vidInf.height); break;
 		}
 		// add the kernel to the vector of kernel pointers
 		this->kernels.push_back(kernel);

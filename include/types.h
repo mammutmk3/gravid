@@ -24,13 +24,13 @@ namespace GRAVID{
 		GRAY_FILTER,
 		SEPIA_FILTER,
 		EDGE_DETECTION,
-		GAUSS_BLUR
+		GAUSS_BLUR3,
+		GAUSS_BLUR5
 	};
 
 	enum Video_Effect{
 		GHOST,
-		ECHO_BLUR,
-		CAM_STAB
+		ECHO_BLUR
 	};
 	
 	enum Fade_Effect{

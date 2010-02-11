@@ -74,7 +74,6 @@ int main(int argc, char** argv){
 							glDisplay(argc, argv, vidInf.width, vidInf.height, VIDEO);
 						}
 						}break;									
-				case CAM_STAB : break;
 			}
 		}
 		else if(cmdPars.hasFadeEffect()){

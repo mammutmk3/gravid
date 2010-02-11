@@ -15,12 +15,12 @@
 #define CMD_LENGTH_MAX 4
 
 #define CMD_USAGE "gravid <{image_filter} | video_filter | fade_effect <input_video>> input_video < --display | output_video>"
-#define CMD_IMAGE "g : gray filter\ns : sepia filter\ne : edge detection\nb : gaussian blur"
-#define CMD_VIDEO "o : ghost\nq : blur\nc : camera stabilisation"
+#define CMD_IMAGE "g : gray filter\ns : sepia filter\ne : edge detection\n3 : gaussian blur 3x3\n5 : gaussian blur 5x5"
+#define CMD_VIDEO "o : ghost\nq : blur\nq : echo blur"
 #define CMD_FADE "a : additive fade\nl : blinds\np : circle fade\nt : teeth\n"
 #define CMD_EXAMPLE "./gravid gb video1.mpg video2.mpeg"
 
-#define VALID_FLTR_FLAGS "gseboqcalpt"
+#define VALID_FLTR_FLAGS "gse35oqalpt"
 
 using namespace GRAVID;
 
@@ -124,7 +124,8 @@ void CmdLineParser::parseImageEffects(){
 		case 'g': this->imgEffects[i] = GRAY_FILTER; break;
 		case 's': this->imgEffects[i] = SEPIA_FILTER; break;
 		case 'e': this->imgEffects[i] = EDGE_DETECTION; break;
-		case 'b': this->imgEffects[i] = GAUSS_BLUR; break;
+		case '3': this->imgEffects[i] = GAUSS_BLUR3; break;
+		case '5': this->imgEffects[i] = GAUSS_BLUR5; break;
 		default: {this->nb_img_effects = 0; return;}
 		}
 	}
@@ -136,7 +137,6 @@ bool CmdLineParser::parseVideoEffect(){
 	switch(this->args[0][0]){
 	case 'o' : this->vidEffect = GHOST; return true;
 	case 'q' : this->vidEffect = ECHO_BLUR; return true;
-	case 'c' : this->vidEffect = CAM_STAB; return true;
 	}
 	this->nb_vid_effects = 0;
 	return false;
