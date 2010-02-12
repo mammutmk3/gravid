@@ -29,7 +29,7 @@ void EchoEffect::renderEcho( std::vector<RGBA*> frames, RGBA* &output_pic_param,
 
 		if ( i<0)
 			i = frames_cnt + i;
-		//std::cout << i << " = start: " << start_address << " - n: " << n << std::endl;		
+		//std::cout << i << " = start: " << start_address << " - n: " << n << std::endl;
 		
 		RGBA* act_pix = frames[i];
 		
@@ -69,9 +69,17 @@ void EchoEffect::renderEcho( std::vector<RGBA*> frames, RGBA* &output_pic_param,
 				output_pic[address].r = r;
 				output_pic[address].g = g;
 				output_pic[address].b = b;
+				
+				/* and overlaying once again the first, for better visibility */
+				/*if () {
+					output_pic[address].r = ( ( ( 75 * start_pix[address].r ) + (( 255 - 75 ) * output_pic[address].r) ) / 255 );
+					output_pic[address].g = ( ( ( 75 * start_pix[address].g ) + (( 255 - 75 ) * output_pic[address].g) ) / 255 );
+					output_pic[address].b = ( ( ( 75 * start_pix[address].b ) + (( 255 - 75 ) * output_pic[address].b) ) / 255 );
+				}*/
+				
 			}
 		}
-		/* and overlaying once again, for better visibility */
+
 		for (int h=0; h<height; h++) {
 			for (int w=0; w<width; w++) {
 				int address = (w+width*h);

@@ -17,11 +17,13 @@
 #include "cpu_effects/FadingEffects.h"
 #include "cpu_effects/edgeDetection.h"
 #include "cpu_effects/echoEffect.h"
+#include "cpu_effects/colorFilter.h"
 #include "visual/writePPM.h"
 
 #include <iostream>
 #include <cstdlib>
 #include <stdexcept>
+#include <sys/time.h>
 
 #include <pthread.h>
 
@@ -59,9 +61,13 @@ int main(int argc, char** argv){
 		EdgeDetection edgeEff;
 		FadingEffects fadingEff;
 		EchoEffect echEff;
+		ColorFilter cfilter;
+		
 		
 		size_t pic_size = vidInf.width * vidInf.height * sizeof( RGBA);		
 		std::vector<RGBA*> frames;
+		
+		float sum=0;
 		
 		// for the  echo-effect
 		// srand ( time(NULL) );
@@ -76,14 +82,18 @@ int main(int argc, char** argv){
 			reader2.changeFrameBuffer( frameVid2 );
 			reader2.decodeNextFrame();
 
-			//edgeEff.sobelOperator( frameVid1, output, vidInf.width, vidInf.height );
+			timeval start;
+			gettimeofday( &start, NULL);
+
+			//fadingEff.fadeBlind( frameVid1, frameVid2, output, vidInf2.width, vidInf2.height, ((float)i/(float)vidInf.nb_frames) );
 			//fadingEff.fadeAdditive( frameVid1, frameVid2, output, vidInf2.width, vidInf2.height, ((float)i/(float)vidInf.nb_frames) );
-			fadingEff.fadeBlind( frameVid1, frameVid2, output, vidInf2.width, vidInf2.height, ((float)i/(float)vidInf.nb_frames) );
+			//edgeEff.sobelOperator( frameVid1, output, vidInf.width, vidInf.height );
+			//cfilter.applyFilter( frameVid1, vidInf.width, vidInf.height, output, C_SEPIA_FILTER );
 			
 			// für den echo-Effekt, CPU-Version 
 
-			//int frame_cnt = i+1;
-		/*	RGBA* tmp_frame = (RGBA*)malloc( pic_size );
+			int frame_cnt = i+1;
+			RGBA* tmp_frame = (RGBA*)malloc( pic_size );
 			memcpy( tmp_frame, frameVid1, pic_size);
 			
 			
@@ -92,11 +102,18 @@ int main(int argc, char** argv){
 				frames.erase(frames.begin());
 				frame_cnt = 5;
 			}
-			*/
+			
 			//std::cout << " frame-nr: " << i << std::endl;
 			
-			//echEff.renderEcho( frames, output, vidInf.width, vidInf.height, i, frame_cnt );
+			echEff.renderEcho( frames, output, vidInf.width, vidInf.height, i, frame_cnt );
 			// write the image to output
+		
+			timeval end;
+			gettimeofday( &end, NULL);
+			
+			sum += ((end.tv_usec + end.tv_sec * 1000000) - (start.tv_usec + start.tv_sec * 1000000))/1000;
+			
+			
 			sprintf(filename,"pictures/pic%i.ppm",i);
 			
 			vidWriter.writeMultiMedFrame((RGBA*) output);
@@ -104,5 +121,6 @@ int main(int argc, char** argv){
 			//writePPM( output, filename, vidInf.width, vidInf.height);
 			i++;
 		}
+		std::cout << "avg time for video_effect: " << sum/i  << " ms"<< std::endl;
 		vidWriter.finalizeVideo();
 }

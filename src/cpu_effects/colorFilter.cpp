@@ -24,8 +24,8 @@ void ColorFilter::applyFilter(const RGBA* srcImage,
 			srcPixel = &(srcImage[y*width+x]);
 			dstPixel = &(dstImage[y*width+x]);
 			switch(fType){
-				case GRAY_FILTER: this->applyGray(*srcPixel,*dstPixel);break;
-				case SEPIA_FILTER: this->applySepia(*srcPixel,*dstPixel);break;
+				case C_GRAY_FILTER: this->applyGray(*srcPixel,*dstPixel);break;
+				case C_SEPIA_FILTER: this->applySepia(*srcPixel,*dstPixel);break;
 			}
 		}
 	}

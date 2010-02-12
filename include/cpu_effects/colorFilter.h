@@ -11,8 +11,8 @@
 #include "types.h"
 
 enum FilterType{
-	GRAY_FILTER,
-	SEPIA_FILTER
+	C_GRAY_FILTER,
+	C_SEPIA_FILTER
 };
 
 namespace GRAVID{

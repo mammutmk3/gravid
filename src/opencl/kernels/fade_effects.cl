@@ -136,12 +136,13 @@ __kernel void fadeBlind(__read_only image3d_t src_img, __write_only image2d_t ds
 
 	int4 out_pix;
 	
-	/* if the pixel is in the blind, take frame2, else frame1 */
-	if ( pc_act_pix < percentage ) {
-		out_pix = read_imageui( src_img, sampler, (int4)(x,y,0,0) );
-	} else {
-		out_pix = read_imageui( src_img, sampler, (int4)(x,y,1,0) );
-	}
+	/* if the pixel is in the blind, take frame2, else frame1,
+	 divergence only with index-writing, not with copying*/
+	int index = 1;
+	if ( pc_act_pix < percentage )
+		index = 0;
+
+	out_pix = read_imageui( src_img, sampler, (int4)(x,y,index,0) );
 	write_imageui( dst_img, (int2)(x,y), out_pix);
 	
 }
